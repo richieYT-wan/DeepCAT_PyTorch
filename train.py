@@ -1,0 +1,2 @@
+TEST = 'abcdef'
+XD = 'WFGAVILMPYSTNQCKRHDE'
