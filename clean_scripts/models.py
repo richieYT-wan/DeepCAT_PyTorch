@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F 
 
-class CNN_CDR3(torch.nn.Module):
+class deepcat_cnn(torch.nn.Module):
 	"""
 	PyTorch version of DeepCAT CNN
 	seq_len represents the length (# of AAs) of the CDR3 region (L = 12, 13, ..., 16)

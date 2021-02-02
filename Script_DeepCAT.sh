@@ -23,6 +23,11 @@ else
        echo "Error! The" ${args[1]} "directory is empty"
        exit 1
    fi   
+
+# This here is for the demo. if first arg is -t, it uses the sample data
+# then ${args[1]} = SampleData/Control or whatever we give him, updating var2
+# At the end of this, we run DeepCAT.py on $var2, $var3 and ${args[0]} which should 
+# be the arguments given to bash prompt
  elif [ ${args[0]} == '-t' ]; then
     var2=${args[1]}
  fi  

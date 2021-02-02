@@ -7,16 +7,19 @@ import csv
 from csv import reader
 import sys
 
-indir=sys.argv[1]
-outdir=sys.argv[2]
+#indir=sys.argv[1]
+#outdir=sys.argv[2]
 thr=10000
-
+indir = os.getcwd()
+outdir = indir+'/whatever/'
 #def PrepareAdaptiveFile(indir,outdir,thr=10000):
 ffs=os.listdir(indir)
 for ff in ffs:
     if('.tsv' not in ff):  
        continue
     ff0=ff
+    print("OUTDIR = ",outdir)
+    print("CURRENTLY WE ARE USING FILE = ",ff,"\n",ff0)
     if not os.path.exists(outdir):
        os.makedirs(outdir)   
     str1='TestReal-'   
@@ -41,11 +44,11 @@ for ff in ffs:
        col2=reverse_array[0:thr,5]
        col3=reverse_array[0:thr,3]
     else:
-       col1=reverse_array[:,1]
+       col1=reverse_array[:,1]  
        col2=reverse_array[:,5]
        col3=reverse_array[:,3]
     c=zip(col1,col2,col3)
-    first_row='amino_acid	v_gene	frequency'
+    first_row='amino_acid v_gene  frequency'
     f=open(newff, 'w')
     f.write(first_row)
     f.write('\n')
