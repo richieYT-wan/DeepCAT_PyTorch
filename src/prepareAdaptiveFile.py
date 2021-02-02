@@ -12,7 +12,16 @@ FIELDS = ['aminoAcid','vMaxResolved', 'frequencyCount (%)']
 MAPPING = {k:v for (k,v) in zip(FIELDS, ['amino_acid', 'v_gene', 'frequency'])}
 
 def clean_tsv(tsv_file, save_filename, threshold=10000):
-	"""Reads a raw .tsv containing information related to """
+	"""
+	Reads a raw .tsv containing information related to TCR sequences
+	Cleans them and retain the following informations : 
+		columns : amino_acids, v_gene (vMaxResolved), frequency (frequencyCount (%))
+		rows : only rows that have 
+				- defined sequences (doesn't contain X or *)
+				- sequence length >=10 <=24
+				- sequence starts with C and ends with F
+				- does not contain "unresolved" in vMaxResolved
+	"""
 	try:
 		tmp = pd.read_csv(tsv_file, sep='\t',usecols=FIELDS)[FIELDS] #read only used columns
 	except ValueError:
@@ -45,21 +54,23 @@ def clean_tsv(tsv_file, save_filename, threshold=10000):
 		return
 
 def args_parser():
-	"""Parses the argument"""
 	parser = argparse.ArgumentParser(description='Processes a raw .tsv file TCR sequences.')
-	parser.add_argument('-indir', type = str, default = os.getcwd(), help = 'Input directory containing the raw .tsv files of interest')
-
+	parser.add_argument('-indir', type = str, default = os.getcwd(), help = 'Input directory containing the raw .tsv files of interest. By default, it is the current working directory')
 	parser.add_argument('-thr',type = int, default = 10000, help = 'Number of lines to keep. By default, take 10 000 entries.')
 	return parser.parse_args()
 
 def main():
 	"""
 	Lists all .tsv files in the input directory, and applies clean_tsv() to them.
-	Then saves them in the output directory
+	Then saves them in the output directory called 'tsv_output/' located within the input directory
+	^ subject to changes depending on the full pipeline requirements later on^
 	"""
 	args = args_parser()
 	input_directory = args.indir
-	output_directory = args.indir+'tsv_output/'
+	if not input_directory.endswith('/'):
+		input_directory = input_directory+'/'
+		print("HERE", input_directory)
+	output_directory = input_directory+'tsv_output/'
 
 	threshold = args.thr
 	#Listing .tsvs, 
@@ -71,7 +82,7 @@ def main():
 
 		save_filename = output_directory+'TestReal-'+filename
 
-		clean_tsv(filename, save_filename, threshold)
+		clean_tsv(input_directory+filename, save_filename, threshold)
 
 
 if __name__ == '__main__':
