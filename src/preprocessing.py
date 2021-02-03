@@ -12,6 +12,11 @@ with open('../AAidx_dict.pkl', 'rb') as f:
 
 n_feats = len(AAidx_Dict['C']) # 15 features
 
+def one_hot_labels(target):
+    tmp = target.new_zeros(target.size(0), target.max() + 1)
+    tmp.scatter_(1, target.view(-1, 1), 1.0)
+    return tmp
+
 def read_seq(filename):
     """
     Read sequences from a txt, and returns an array of the sequences.
@@ -29,19 +34,6 @@ def read_seq(filename):
             data.append(seq)
     return np.array(data)
 
-#def onehot_encoding(seq):
-#   """One-hot encodes a given sequence"""
-#
-#   n_aa = len(seq) #number of amino acids in seq
-#   #Re-using their notation and converting to torch.Tensor
-#   temp = np.zeros([20, n_aa], dtype = np.float32) #Would've used int but keeping this for now
-#   for idx in range(n_aa):
-#       aa = seq[idx]
-#       mask = np.where(AAs==aa)
-#       temp[mask, idx]=1
-#   onehot = torch.from_numpy(temp)
-#   return onehot
-
 def aaindex_encoding(seq, device):
     """Encodes the AA indices to a given sequence"""
     n_aa = len(seq)
@@ -51,6 +43,7 @@ def aaindex_encoding(seq, device):
         temp[idx] = AAidx_Dict[aa]
     temp = np.transpose(temp)
     aa_encoding = torch.from_numpy(temp)
+    aa_encoding = aa_encoding.unsqueeze(0)
     if device == torch.device('cuda'):
         aa_encoding = aa_encoding.to(device)
     return aa_encoding
@@ -87,10 +80,13 @@ def generate_features_labels(tumor_sequences, normal_sequences, device):
 
         data = torch.stack(data) #Stack a list of tensors into a single tensor
         if device == torch.device('cuda'):
-            data = data.to(device)
+            #print(data.device)
+            #data = data.to(device)
+            labels = labels.to(device)
         features = {'x':data, 'length':length}
         feature_dict[length] = features
         label_dict[length] = labels 
-
+        del features
+        del labels
     return feature_dict, label_dict
 
