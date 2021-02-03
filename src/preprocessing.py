@@ -83,10 +83,10 @@ def generate_features_labels(tumor_sequences, normal_sequences, device):
             #print(data.device)
             #data = data.to(device)
             labels = labels.to(device)
-        features = {'x':data, 'length':length}
-        feature_dict[length] = features
+        #features = {'x':data, 'length':length}
+        feature_dict[length] = data
         label_dict[length] = labels 
-        del features
+        del data
         del labels
     return feature_dict, label_dict
 

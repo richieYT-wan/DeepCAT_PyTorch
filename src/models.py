@@ -47,7 +47,7 @@ class deepcat_cnn(torch.nn.Module):
         x = self.dropout(F.relu(self.fc1(x))) 
         x = self.dropout(F.relu(self.fc2(x))) #Getting binary logits
         
-        #label = x.argmax(1)
-        #probs = x.softmax(1)
+        label = x.argmax(1)
+        probs = x.softmax(1)
 
-        return x #probs, label
+        return x, label, probs
