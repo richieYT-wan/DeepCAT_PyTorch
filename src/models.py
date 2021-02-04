@@ -18,17 +18,18 @@ class deepcat_cnn(torch.nn.Module):
         #Getting the dimension after convolutions
         self.dummy_param = nn.Parameter(torch.empty(0))
         self.length = seq_len
-        
-        #if seq_len<15: only correct if no stride on maxpool
-        #    self.nb_units = 16*1*2 
-        #elif seq_len >=15:
-        #    self.nb_units = 16*1*3 
-        
+
         #Linear/Dense layers
         self.fc1 = nn.Linear(16*(self.length-4), 10)
         self.fc2 = nn.Linear(10,2)
         self.dropout= nn.Dropout(0.4)
-
+        
+    def reset_parameters(self):
+        for layer in self.children():
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
+                layer.zero_grad()
+                
     def forward(self, x):
         #Conv -> ReLU -> MaxPool
         #print("input",x.shape)
@@ -45,9 +46,11 @@ class deepcat_cnn(torch.nn.Module):
         x = x.view(-1, x.shape[1]*x.shape[2]*x.shape[3]) #reshaping after convolution
         #print("reshaped",x.shape)
         x = self.dropout(F.relu(self.fc1(x))) 
+        #THERES A RELU HERE THAT SHOULD BE ::++++ TODO
         x = self.dropout(F.relu(self.fc2(x))) #Getting binary logits
         
-        label = x.argmax(1)
-        probs = x.softmax(1)
+        predictions = x.argmax(1)
+        probabilities = x.softmax(1)
 
-        return x, label, probs
+        return x, predictions, probabilities
+    

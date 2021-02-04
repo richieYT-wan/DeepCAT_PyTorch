@@ -1,3 +1,8 @@
+"""
+CORRESPONDS TO A BETTER VERSION OF THEIR SCRIPT PREPAREADAPTIVEFILE.PY
+This one is written in pandas and is both more efficient and much cleaner.
+"""
+
 import os
 from os.path import exists
 import numpy as np
