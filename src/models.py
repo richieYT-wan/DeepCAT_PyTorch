@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F 
+import os 
 
 class deepcat_cnn(torch.nn.Module):
     """
@@ -18,7 +19,7 @@ class deepcat_cnn(torch.nn.Module):
         #Getting the dimension after convolutions
         self.dummy_param = nn.Parameter(torch.empty(0))
         self.length = seq_len
-
+        self.name = 'deepcat_cnn_'+str(seq_len)
         #Linear/Dense layers
         self.fc1 = nn.Linear(16*(self.length-4), 10)
         self.fc2 = nn.Linear(10,2)
@@ -53,4 +54,31 @@ class deepcat_cnn(torch.nn.Module):
         probabilities = x.softmax(1)
 
         return x, predictions, probabilities
+
+def get_models(keys):
+    model_dict = {}
+    for key in keys:
+        model = deepcat_cnn(key)
+        model_dict[key]=model
+        del model
+    return model_dict
+
+def load_models(keys, PATH):
     
+    model_dict = get_models(keys)
+    files = os.listdir(PATH)
+    files = [f for f in files if '.pth.tar' in f]
+    
+    for key in keys:
+        pattern = 'deepcat_cnn_'+str(key)
+        chkpt = {}
+        for fn in files:
+            if pattern in fn:
+                name = os.path.join(PATH,fn)
+                chkpt = torch.load(name)
+            else:continue
+        model_dict[key].load_state_dict(chkpt['state_dict'])
+    print("Models loaded")
+    return model_dict
+        
+       

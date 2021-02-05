@@ -1,8 +1,3 @@
-"""
-CORRESPONDS TO A BETTER VERSION OF THEIR SCRIPT PREPAREADAPTIVEFILE.PY
-This one is written in pandas and is both more efficient and much cleaner.
-"""
-
 import os
 from os.path import exists
 import numpy as np
@@ -83,7 +78,7 @@ def main():
 	for filename in filenames:
 		if ('.tsv' not in filename):continue #Skipping non .tsv file
 		if not os.path.exists(output_directory):
-			os.makedirs(output_directory)   
+			os.makedirs(output_directory, exist_ok = True)   
 
 		save_filename = output_directory+'TestReal-'+filename
 

@@ -7,7 +7,7 @@ AAs = np.array(list('WFGAVILMPYSTNQCKRHDE')) #Constant list of amino acids
 PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
 
 #Loading the pre-set Dictionary with values from PCA1-15 AA indices
-with open('AAidx_dict.pkl', 'rb') as f: 
+with open('../AAidx_dict.pkl', 'rb') as f: 
     AAidx_Dict = pickle.load(f) 
 
 n_feats = len(AAidx_Dict['C']) # 15 features
@@ -35,6 +35,8 @@ def shuffle_data(features, target, return_indices=False):
 def naive_split(features, target, ratio):
     """
     naïvely split the datasets into train and validation
+    ratio determines the proportion of data in the validation set.
+    For example, ratio = 0.33 puts 33% of the data into the validation set.
     """
     #Shuffling
     data, labels = shuffle_data(features, target)
@@ -79,7 +81,7 @@ def aaindex_encoding(seq, device):
     return aa_encoding
 
 
-def generate_features_labels(tumor_sequences, normal_sequences, device=None, shuffle=True):
+def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,17), device=None, shuffle=True):
     """For each CDR3 dataset (tumor and normal) sequences, get the feature vectors and labels"""
     
     #Normally, sequences are extracted as lists, but maybe I can modify something in read_sequences to return array instead of list
@@ -89,10 +91,10 @@ def generate_features_labels(tumor_sequences, normal_sequences, device=None, shu
     #length of each datapoint (sequence)
     seqlens_tumor = np.array([len(seqs) for seqs in tumor_sequences]) 
     seqlens_normal = np.array([len(seqs) for seqs in normal_sequences])
-
+    print("Getting data")
     feature_dict, label_dict = {}, {}
     #Only keep sequences with length 12 to 16
-    for length in range(12,17):
+    for length in keys:
         #Using numpy to create mask for fancy indexing, converting to tensors later
         mask_tumor = np.where(seqlens_tumor==length)[0]
         mask_normal = np.where(seqlens_normal==length)[0]
@@ -128,5 +130,35 @@ def generate_features_labels(tumor_sequences, normal_sequences, device=None, shu
         del data
         del labels
     print("Data device =",feature_dict[12].device)
+    print("Done loading, returning features and labels.")
     return feature_dict, label_dict
 
+def get_train_test_data(directory, keys, device=None, shuffle = True):
+    """
+    From a directory, reads the .txt and generates the corresponding train/test tumor-normal data (features+label). Assumes the files are named as 'NormalCDR3.txt', 'NormalCDR3_test.txt', 'TumorCDR3.txt', 'TumorCDR3_test.txt'
+    """
+    if not directory.endswith('/'):
+        directory=directory+'/'
+    files = os.listdir(directory)
+    #Not pretty loops lol
+    for f in files:
+        lower = f.lower()
+        if '.txt' not in lower:continue #Skips non .txt files
+        if 'cdr3' not in lower:continue #Skips files without CDR3 in the name
+        if 'test' in lower:
+            if 'tumor' in lower:
+                test_tumor = read_seq(directory+f)
+            elif 'normal' in lower:
+                test_normal = read_seq(directory+f)
+        else:# 'test' not in lower:
+            if 'tumor' in lower:
+                train_tumor = read_seq(directory+f)
+            elif 'normal' in lower:
+                train_normal = read_seq(directory+f)
+    
+    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle)
+    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle)
+    
+    return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
+            
+            
