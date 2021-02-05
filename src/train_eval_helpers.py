@@ -111,7 +111,7 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
     val_f1 = []
 
     if save == 'val':
-        best_val == 1 #value to check for criterion = Val loss is compare if it is lower than 1 (initially)
+        best_val = 1 #value to check for criterion = Val loss is compare if it is lower than 1 (initially)
     
     #elif save != 'val' and save != False:
     #    is_best == 0 #value to check for criterion = else, is compare if it is higher than 0 (initially)
@@ -120,7 +120,7 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
     for e in tqdm(range(nb_epochs)):
         train_loss = train_model_step(model, criterion, optimizer, train_data, train_label, mini_batch_size)
         train_losses.append(train_loss)
-        val_loss, acc, auc, f1 = eval_model(model, criterion, eval_data, eval_label, roc_curve=False)
+        val_loss, acc, auc, f1 = eval_model(model, criterion, eval_data, eval_label, return_curve=False)
         val_losses.append(val_loss)
         val_accs.append(acc)
         val_aucs.append(auc)
@@ -135,7 +135,7 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
             if is_best:
                 best_val = val_loss
                 torch.save({
-                    'epoch':epoch,
+                    'epoch':e,
                     'model':model.name,
                     'best_metric':save,
                     'state_dict': model.state_dict(),
@@ -145,8 +145,7 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
                     'AUC' : auc,
                     'F1' : f1}, 
                     fname)
-                     
-            
+    
     return train_losses, val_losses, val_accs, val_aucs, f1
                 
 def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,

@@ -31,9 +31,9 @@ def args_parser():
     parser = argparse.ArgumentParser(description='Trains the model. Can use naïve splitting or K-fold crossvalidation.')
     parser.add_argument('-indir', type = str, default = './TrainingData/', help = 'relative path to input directory containing the tumor/normal, train&test CDR3 sequences. Format should be .txt, with no header. By default, it is ./TrainingData/, assuming train.py is located in the root of the github folder (./DeepTCR_PyTorch/TrainingData/ with ./DeepTCR_PyTorch/train.py.')
     parser.add_argument('-outdir', type = str, default= 'output/', help = 'Relative path to the output directory where the best weights as well as figures, training losses/accuracies etc. are logged. By default, if it does not exist, a folder called output/ is created in the current directory.')
-    parser.add_argument('-nb_epochs', type=list, default = [400], help = 'Number of epochs over which the model is trained.')
-    parser.add_argument('-lr', type = list, default = [0.00125], help= 'Learning rate, 0.00125 by default')
-    parser.add_argument('-keys', type = list, default = [12,13,14,15,16], help = 'A list of the models (lengths) to train (corresponds to the sequence length). By default, all models (len = 12 to 16) are trained. If a single model is needed, please input a list. ex : [12] to only train model 12')
+    parser.add_argument('-nb_epochs', type=int, default = 300, help = 'Number of epochs over which the model is trained.')
+    parser.add_argument('-lr', type = float, default = 0.00125, help= 'Learning rate, 0.00125 by default')
+    parser.add_argument('-keys', nargs = "+", default = [12,13,14,15,16], help = 'A list of the models (lengths) to train (corresponds to the sequence length). By default, all models (len = 12 to 16) are trained. If a single model is needed, please input a list. ex : [12] to only train model 12')
     parser.add_argument('-batchsize', type=int, default=250, help ='Mini-batch size for training. By default, 250')
     parser.add_argument('-valmode', type= str, default='naive', help = 'Validation mode. By default, it is a "naïve" split of the training set with 0.67 as training, 0.33 as validation. Value should only be NAIVE or KCV. (not case sensitive)')
     parser.add_argument('-kfold', type = int, default = 5, help = 'If --valmode = KCV, then --kfold specifies K, i.e. the number of folds to crossvalidate over.')
@@ -53,7 +53,7 @@ def main():
     print("\nARGS:",args,"\n")
     #Reading data from train dir 
     TRAINDIR = args.indir
-    KEYS = args.keys         
+    KEYS = [int(k) for k in args.keys]
     OUTDIR = os.path.join(os.getcwd(), args.outdir) 
     if not os.path.exists(OUTDIR):
         os.makedirs(OUTDIR, exist_ok = True)  
@@ -61,9 +61,9 @@ def main():
     #Training hyperparameters
     print("\nOUTPUT DIRECTORY:",OUTDIR)
     lr = args.lr
-    if len(lr)==1: lr*=len(KEYS)
+    #if len(lr)==1: lr*=len(KEYS)
     nb_epochs = args.nb_epochs
-    if len(nb_epochs)==1: nb_epochs*=len(KEYS)
+    #if len(nb_epochs)==1: nb_epochs*=len(KEYS)
     mbs = args.batchsize #mini-batch_size
     
     #returns dictionaries!! e.g. train_feats[12] returns the feats for L=12
@@ -82,6 +82,7 @@ def main():
     else:
         DEVICE = torch.device('cpu')
         print("Using : {}".format(DEVICE))
+
     #Non-robust implementation of this checking for now
     crossvalidate = args.valmode.lower() == 'kcv'
     naive = args.valmode.lower() == 'naive'
@@ -108,26 +109,27 @@ def main():
         labels_temp = train_labels[key].detach().clone().to(DEVICE)
         model_dict[key].to(DEVICE)
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model_dict[key].parameters(), lr=lr[index])
+        optimizer = optim.Adam(model_dict[key].parameters(), lr=lr)
         #Stuff for saving checkpoint
         filename = model_dict[key].name+'_best_'+args.metric+'.pth.tar'
         FNAME = os.path.join(OUTDIR, filename)
         
         if naive:
-            train_data, train_label, eval_data, eval_label = naive_split(data_temp, labels_temp, ratio)
+            train_data, train_target, eval_data, eval_target = naive_split(data_temp, labels_temp, ratio)
             train_losses, val_losses, val_accs, val_aucs, val_f1 = train_model_full(model_dict[key], criterion, 
-                                                                            optimizer, nb_epochs[index],
-                                                                            train_data, train_label, 
-                                                                            eval_data, eval_label, 
+                                                                            optimizer, nb_epochs,
+                                                                            train_data, train_target, 
+                                                                            eval_data, eval_target, 
                                                                             mbs, fname=FNAME,
                                                                             save=args.metric,args=args,verbose=True)    
         elif crossvalidate:
             train_losses, val_losses, val_accs, val_aucs, val_f1 = kfold_cv(model_dict[key], criterion, optimizer, nb_epochs, 
-                                                                    kfold, mbs, data_temp, labels_temp, verbose=True)
+                                                                            kfold, mbs, data_temp, labels_temp, verbose=args.v)
             
             ratio = 1/kfold
-            train_data, train_label, eval_data, eval_label = naive_split(data_temp, labels_temp, ratio)
+            train_data, train_target, eval_data, eval_target = naive_split(data_temp, labels_temp, ratio)
             #After crossvalidation, re-run a full training and saves the weights (Very inefficient for now)
+            model_dict[key].reset_parameters()
             _, _, _, _, _ = train_model_full(model_dict[key], criterion, optimizer, nb_epochs,
                                           train_data, train_target, eval_data, eval_target, 
                                           mbs, fname=FNAME, save=args.metric,args=args,verbose=True)
@@ -152,6 +154,6 @@ def main():
         with open(picklename, 'wb') as f:
             pickle.dump(picklename, f)
     
-
+    
 if __name__ == '__main__':
     main()

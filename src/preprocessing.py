@@ -1,7 +1,7 @@
 import pickle
 import torch
 import numpy as np
-import sys,os,re,csv,pathlib
+import sys,os,re,csv,pathlib, math 
 
 AAs = np.array(list('WFGAVILMPYSTNQCKRHDE')) #Constant list of amino acids
 PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
@@ -93,9 +93,11 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
     seqlens_normal = np.array([len(seqs) for seqs in normal_sequences])
     print("Getting data")
     feature_dict, label_dict = {}, {}
+    
     #Only keep sequences with length 12 to 16
     for length in keys:
         #Using numpy to create mask for fancy indexing, converting to tensors later
+        
         mask_tumor = np.where(seqlens_tumor==length)[0]
         mask_normal = np.where(seqlens_normal==length)[0]
         #Reusing the code from DeepCAT for Labels
@@ -155,8 +157,9 @@ def get_train_test_data(directory, keys, device=None, shuffle = True):
                 train_tumor = read_seq(directory+f)
             elif 'normal' in lower:
                 train_normal = read_seq(directory+f)
-    
+    print("\nTrain")
     train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle)
+    print("\nTest")
     test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle)
     
     return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
