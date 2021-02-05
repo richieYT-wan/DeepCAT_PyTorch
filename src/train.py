@@ -152,7 +152,7 @@ def main():
     for index, item in enumerate([train_loss_dict, val_loss_dict, val_accs_dict, val_aucs_dict, val_f1_dict]):
         picklename = os.path.join(OUTDIR, fns[index])
         with open(picklename, 'wb') as f:
-            pickle.dump(picklename, f)
+            pickle.dump(item, f)
     
     
 if __name__ == '__main__':
