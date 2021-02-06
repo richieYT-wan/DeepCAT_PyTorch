@@ -7,8 +7,19 @@ AAs = np.array(list('WFGAVILMPYSTNQCKRHDE')) #Constant list of amino acids
 PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
 
 #Loading the pre-set Dictionary with values from PCA1-15 AA indices
-with open('../AAidx_dict.pkl', 'rb') as f: 
-    AAidx_Dict = pickle.load(f) 
+PATH = os.getcwd()
+
+if 'notebook' in PATH:
+    with open('../src/AAidx_dict.pkl', 'rb') as f: 
+        AAidx_Dict = pickle.load(f) 
+
+elif 'src' in PATH :
+    with open('./AAidx_dict.pkl', 'rb') as f: 
+        AAidx_Dict = pickle.load(f) 
+else :
+    with open('./src/AAidx_dict.pkl', 'rb') as f: 
+        AAidx_Dict = pickle.load(f) 
+    
 
 n_feats = len(AAidx_Dict['C']) # 15 features
 

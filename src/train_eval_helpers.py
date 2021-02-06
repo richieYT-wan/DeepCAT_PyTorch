@@ -6,6 +6,7 @@ from torch import optim
 from torch.utils.   data import BatchSampler, RandomSampler    
 from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score, f1_score
 from sklearn.model_selection import train_test_split, KFold
+import pandas as pd
 import matplotlib.pyplot as plt
 import math
 #from src.torch_util import save_checkpoint
@@ -61,6 +62,34 @@ def eval_model(model, criterion, data, labels, return_curve=False):
     
     else:return eval_loss.item(), acc, AUC, f1
 
+def test_eval(model_dict, keys, criterion, data_dict, labels_dict, return_curve=False):
+    """
+    takes a model_dict and evaluates each model on the corresponding data
+    """
+    eval_loss_dict = {}
+    acc_dict = {}
+    AUC_dict = {}
+    f1_dict = {}
+    curve_dict = {}
+    for index, ll in enumerate(keys):
+        if return_curve :
+            loss, acc, auc, f1, curve = eval_model(model_dict[ll], criterion, 
+                                                   data_dict[ll], labels_dict[ll],
+                                                  return_curve = True)
+            curve_dict[ll] = (auc, curve)
+        elif return_curve == False:
+            loss, acc, auc, f1 = eval_model(model_dict[ll], criterion, 
+                                            data_dict[ll], labels_dict[ll],
+                                            return_curve = False)
+        eval_loss_dict[ll] = loss
+        acc_dict[ll] = acc
+        AUC_dict[ll] = auc
+        f1_dict[ll] = f1
+    if return_curve :
+        return eval_loss_dict, acc_dict, AUC_dict, f1_dict, curve_dict
+    else:
+        return eval_loss_dict, acc_dict, AUC_dict, f1_dict
+            
 def get_pred_df(model_dict, data_dict, target_labels_dict):
     """
     Evaluates each model on their targets, then returns a df containing 
@@ -126,10 +155,10 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
         val_aucs.append(auc)
         val_f1.append(f1)
         if (e%epoch_print==0 or e==nb_epochs)&verbose:
-            print("Current stats at epoch = {} :\n"\
-                  "Train loss = {}\n Val loss = {}"\
-                  "\n Acc = {}\nAUC = {}\nF1 = {}".format(e,train_loss, val_loss,
-                                                          acc, auc, f1))
+            print("\nCurrent stats at epoch = {} :"\
+                  "\n\tTrain loss = {}\n\tVal loss = {}"\
+                  "\n\tAcc = {}\n\tAUC = {}\n\tF1 = {}".format(e,train_loss, val_loss,
+                                                               acc, auc, f1))
         if save=='val':
             is_best = val_loss < best_val
             if is_best:
@@ -146,7 +175,7 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
                     'F1' : f1}, 
                     fname)
     
-    return train_losses, val_losses, val_accs, val_aucs, f1
+    return train_losses, val_losses, val_accs, val_aucs, val_f1
                 
 def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,
              mini_batch_size, data, labels, verbose=False):
@@ -180,11 +209,11 @@ def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,
             AUC_temp.append(AUC)
             f1_temp.append(f1)
             if (e%epoch_print==0|e==nb_epochs)&verbose:
-                print("Current stats at epoch = {} :\n"\
-                      "Train loss = {}\n Val loss = {}"\
-                      "\nAcc = {}\nAUC = {}".format(e,train_loss,
-                                                     val_loss,
-                                                     acc, AUC))
+                print("\nCurrent stats at epoch = {} :"\
+                  "\n\tTrain loss = {}\n\tVal loss = {}"\
+                  "\n\tAcc = {}\n\tAUC = {}\n\tF1 = {}".format(e,train_loss, val_loss,
+                                                               acc, AUC, f1))
+
         train_result.append(train_temp)    
         val_result.append(val_temp)
         acc_result.append(acc_temp)

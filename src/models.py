@@ -64,7 +64,6 @@ def get_models(keys):
     return model_dict
 
 def load_models(keys, PATH):
-    
     model_dict = get_models(keys)
     files = os.listdir(PATH)
     files = [f for f in files if '.pth.tar' in f]
