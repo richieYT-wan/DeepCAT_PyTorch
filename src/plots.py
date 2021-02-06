@@ -90,7 +90,7 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
         for index, ll in enumerate(keys):
             pts = np.linspace(0,1, 100)
             ax[index].plot(curve_dict[ll][1][0], curve_dict[ll][1][1],
-                           'm-', lw = 0.8, label = 'AUC={}'.format(curve_dict[ll][0]))
+                           'm-', lw = 0.8, label = 'AUC={:.4f}'.format(curve_dict[ll][0]))
             ax[index].plot(pts, pts, 'k--', lw = '0.4', label = 'random')
             ax[index].legend(loc='best')
             ax[index].set_title('ROC_AUC on test set for L = {}'.format(ll))
@@ -114,6 +114,8 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
         plt.savefig(os.path.join(folder,save))
     else:
         plt.savefig(OUTPATH+save)
+        
+        
 def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys, 
               save = 'accs.jpg', folder = None):
     num = len(keys)
