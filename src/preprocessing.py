@@ -2,6 +2,7 @@ import pickle
 import torch
 import numpy as np
 import sys,os,re,csv,pathlib, math 
+import pandas as pd 
 
 AAs = np.array(list('WFGAVILMPYSTNQCKRHDE')) #Constant list of amino acids
 PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
@@ -175,4 +176,24 @@ def get_train_test_data(directory, keys, device=None, shuffle = True):
     
     return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
             
-            
+def read_ismart(filename):
+    """
+    Reads a .txt file, assumes that it is in the format outputed by iSMARTm.py
+    Returns a dataframe, whose underlying arrays are to be used for aaindex_encoding()
+    """
+    df = pd.read_csv(filename, sep='\t', header=0)
+    df['len'] = df.apply(lambda x: len(x['aminoAcid']),axis=1)
+    df = df.query('len>=12 & len<=16').copy()
+    mask = df['aminoAcid'].str.startswith('C') & df['aminoAcid'].str.endswith('F')
+    df = df[mask].sort_values('len', ascending=True).copy()
+    #seqs = df['aminoAcid'].copy().values
+    #return seqs, df
+    return df
+
+def get_feats_tensor(sequences, device):
+    "Sequences : numpy array"
+    feats = []
+    for seq in sequences:
+        feats.append(aaindex_encoding(seq, device))
+    feats = torch.stack(feats).to(device)
+    return feats

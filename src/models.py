@@ -77,7 +77,24 @@ def load_models(keys, PATH):
                 chkpt = torch.load(name)
             else:continue
         model_dict[key].load_state_dict(chkpt['state_dict'])
-    print("Models loaded")
+    print("Models & weights loaded")
     return model_dict
-        
-       
+
+def model_info(keys, PATH):
+    model_dict = get_models(keys)
+    files = os.listdir(PATH)
+    files = [f for f in files if '.pth.tar' in f]
+    
+    for key in keys:
+        pattern = 'deepcat_cnn_'+str(key)
+        chkpt = {}
+        for fn in files:
+            if pattern in fn:
+                name = os.path.join(PATH,fn)
+                chkpt = torch.load(name)
+            else:continue
+        print('L = {}'.format(key))
+        for (k,v) in chkpt.items():
+            if k == 'state_dict':continue
+            else:print("\t{} : {}".format(k,v))
+            

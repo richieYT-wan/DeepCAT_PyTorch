@@ -56,7 +56,7 @@ def main():
     #Reading data from train dir 
     TRAINDIR = args.indir
     KEYS = [int(k) for k in args.keys]
-    OUTDIR = os.path.join(os.getcwd(), 'output/')
+    OUTDIR = os.path.join(os.getcwd(), 'output/training_output/')
     OUTDIR = os.path.join(OUTDIR, args.outdir) 
     if not os.path.exists(OUTDIR):
         os.makedirs(OUTDIR, exist_ok = True)  
@@ -148,12 +148,18 @@ def main():
         del labels_temp
     print("\n### ============ Training complete. Saving files. ============ ###\n")
     
+    PICKLEDIR = os.path.join(OUTDIR, 'dicts/') 
+    if not os.path.exists(PICKLEDIR):
+        os.makedirs(PICKLEDIR, exist_ok = True)    
     fns=['train_losses_dict.pkl','val_losses_dict.pkl', 'val_accs_dict.pkl','val_aucs_dict.pkl','val_f1_dict.pkl']
     for index, item in enumerate([train_loss_dict, val_loss_dict, val_accs_dict, val_aucs_dict, val_f1_dict]):
-        picklename = os.path.join(OUTDIR, fns[index])
+        picklename = os.path.join(PICKLEDIR, fns[index])
         with open(picklename, 'wb') as f:
             pickle.dump(item, f)
             
+    with open(os.path.join(OUTDIR,'args.txt'), 'wb') as f:
+        pickle.dump(str(args), f)
+        
     del model_dict 
     
     if args.test == True:
@@ -161,15 +167,25 @@ def main():
         models = load_models(KEYS, OUTDIR) #Reloading the best weights
         _, test_accs, test_aucs, test_f1s, test_curves = test_eval(models, KEYS, nn.CrossEntropyLoss(),
                                                                    test_feats, test_labels, return_curve=True)
+        #print("AUCs for the test set for :")#
+        #or k in test_aucs.keys():
+        #   print("\tL = {} : AUC = ".format(k), test_aucs[k])
+            
         preds_df = get_pred_df(models, test_feats, test_labels)
         test_results_df = pd.DataFrame(index=KEYS, columns = ['accuracy','AUC','f1_score','curve'])
+        print("Results on the test set:")
+
         #curve_df = pd.DataFrame(index=KEYS, columns = ['fpr','tpr','thr'])
         for key in KEYS:
             test_results_df.loc[key][['accuracy','AUC','f1_score']] = test_accs[key], test_aucs[key], test_f1s[key]
             #curve_df.loc[key][['fpr','tpr','thr']] = test_curves[key][0], test_curves[key][1], test_curves[key][2]
+
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+            print(test_results_df[['accuracy','AUC','f1_score']])
+            
         print("\n### ============ Saving results to CSV and ROC_curves_df as pickle ============ ###\n")
         test_results_df.to_csv(os.path.join(OUTDIR+'test_results.csv'))
-        with open(os.path.join(OUTDIR,'curve_df.pkl'), 'wb') as f:
+        with open(os.path.join(PICKLEDIR,'roc_curves_dict.pkl'), 'wb') as f:
             pickle.dump(test_curves, f)
 
     if args.plots:
@@ -178,9 +194,9 @@ def main():
         FOLDER = os.path.join(OUTDIR, 'figures/')
         if not os.path.exists(FOLDER):
             os.makedirs(FOLDER, exist_ok = True) 
-            
-        plot_loss(train_loss_dict, val_loss_dict, KEYS, folder=FOLDER)
-        plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, KEYS, folder = FOLDER)
+        #TODO : args.valmode = 'naive' or 'KCV' must implement plotting for KCV
+        plot_loss(train_loss_dict, val_loss_dict, KEYS, folder=FOLDER)#, plotmode=args.valmode)
+        plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, KEYS, folder = FOLDER)#, plotmode=args.valmode)
         
         if args.test == True:
             plot_roc_curve(test_curves, KEYS, save = 'testset_roc_curves.jpg', folder = FOLDER)

@@ -222,5 +222,21 @@ def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,
 
     return train_result, val_result, acc_result, AUC_result, f1_result
 
-#def batch_run(function, *args):
-#    for lengths in range(12,17):function(length,*args)
+def predict_score(models, filename, device='cuda'):
+    """
+    Reads a .txt file with read_ismart, gets the corresponding dataframe containing the sequences.
+    Then evaluate the models
+    """
+    #Sets the models to eval mode & sends to device
+
+    
+    df = read_ismart(filename) #Reads the sequences and get the dataframe
+    df['prob_cancer']=None #New column for predicted probability of cancer for each sequence
+    for l in [12,13,14,15,16]:
+        seqs=df.query('len==@l')['aminoAcid'].values 
+        feats = get_feats_tensor(seqs, device=device) #Gets the feature tensors 
+        _, _, probs = models[l](feats) #Runs the prediction
+        df.loc[df['len']==l,'prob_cancer'] = probs.detach().cpu()[:,1] 
+    
+    cancer_score = np.mean(df['prob_cancer']) #Cancer Score as defined by Beshnova et al.
+    return cancer_score

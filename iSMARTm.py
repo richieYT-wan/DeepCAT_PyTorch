@@ -15,7 +15,7 @@ import random, time
 from functools import partial
 from multiprocessing import Pool
 #from statsmodels.sandbox.stats.multicomp import multipletests as mlt
-import sys,os,re,resource
+import sys,os,re
 
 t0=time.time()
 sys.setrecursionlimit(1000000)
@@ -654,6 +654,7 @@ Input columns:
 def main():
     (opt,_)=CommandLineParser()
     FileDir=opt.Directory
+    #Loads all .TSV
     if len(FileDir)>0:
             files=os.listdir(FileDir)
             files0=[]
@@ -687,6 +688,8 @@ def main():
     Gapn=int(opt.GapN)
     cutoff=float(opt.thr)
     OutDir=opt.OutDir
+    if not os.path.exists(OutDir):
+        os.makedirs(OutDir, exist_ok = True)
     PW=opt.PW
     II=opt.I
     CC=opt.C
@@ -782,5 +785,5 @@ def main():
 
 if __name__=='__main__':
     main()
-    print("Total time elapsed: %f" %(time.time()-t0))
-    print("Maximum memory usage: %f MB" %(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000000))
+    print("Total time elapsed: %f seconds" %(time.time()-t0))
+    #print("Maximum memory usage: %f MB" %(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1000000))
