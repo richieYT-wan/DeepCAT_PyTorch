@@ -3,7 +3,7 @@ from src.models import deepcat_cnn
 from torch import nn
 from torch.nn import functional as F
 from torch import optim
-from torch.utils.   data import BatchSampler, RandomSampler    
+from torch.utils.data import BatchSampler, RandomSampler    
 from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score, f1_score
 from sklearn.model_selection import train_test_split, KFold
 import pandas as pd
@@ -12,7 +12,15 @@ import math
 #from src.torch_util import save_checkpoint
 from tqdm import tqdm
 
-
+#Helper
+def str_to_bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+#
 def train_model_step(model, criterion, optimizer, train_data, train_labels, mini_batch_size):
     """
     Trains one version (length) of a given model

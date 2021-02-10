@@ -9,7 +9,7 @@ __pycache__/
 
 .ipynb_checkpoints
 __pycache__
-
+draft_notebooks/*
 
 # Distribution / packaging
 .Python
