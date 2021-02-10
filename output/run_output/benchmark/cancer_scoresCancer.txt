@@ -1,0 +1,16 @@
+TestReal-BR01B.tsv_ClusteredCDR3s_7.5.txt	0.3379616450250862
+TestReal-BR05B.tsv_ClusteredCDR3s_7.5.txt	0.3257104122100605
+TestReal-BR07B.tsv_ClusteredCDR3s_7.5.txt	0.3243856066188147
+TestReal-BR13B.tsv_ClusteredCDR3s_7.5.txt	0.28648379200603813
+TestReal-BR14B.tsv_ClusteredCDR3s_7.5.txt	0.3456832311066926
+TestReal-BR15B.tsv_ClusteredCDR3s_7.5.txt	0.2806784202810377
+TestReal-BR16B.tsv_ClusteredCDR3s_7.5.txt	0.2913266635022138
+TestReal-BR17B.tsv_ClusteredCDR3s_7.5.txt	0.40588477331694667
+TestReal-BR18B.tsv_ClusteredCDR3s_7.5.txt	0.2987255932072451
+TestReal-BR19B.tsv_ClusteredCDR3s_7.5.txt	0.4245656408753646
+TestReal-BR20B.tsv_ClusteredCDR3s_7.5.txt	0.36686435087330743
+TestReal-BR21B.tsv_ClusteredCDR3s_7.5.txt	0.3311403918021123
+TestReal-BR22B.tsv_ClusteredCDR3s_7.5.txt	0.3664294603507819
+TestReal-BR24B.tsv_ClusteredCDR3s_7.5.txt	0.3381733621956421
+TestReal-BR25B.tsv_ClusteredCDR3s_7.5.txt	0.4176845155001895
+TestReal-BR26B.tsv_ClusteredCDR3s_7.5.txt	0.3603867797335824

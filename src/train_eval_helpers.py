@@ -104,6 +104,7 @@ def get_pred_df(model_dict, data_dict, target_labels_dict):
     for ll in RANGE: 
         #seqlen = ll.value
         mod = model_dict[ll].to('cuda')
+        mod.eval()
         X = data_dict[ll].to('cuda') #data
         y_true = target_labels_dict[ll] #y_true
         _, preds, probs = model_dict[ll](X)
@@ -222,7 +223,7 @@ def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,
 
     return train_result, val_result, acc_result, AUC_result, f1_result
 
-def predict_score(models, filename, device='cuda'):
+def predict_score(models, filename, device='cuda', encoding='deepcat'):
     """
     Reads a .txt file with read_ismart, gets the corresponding dataframe containing the sequences.
     Then evaluate the models
@@ -234,7 +235,7 @@ def predict_score(models, filename, device='cuda'):
     df['prob_cancer']=None #New column for predicted probability of cancer for each sequence
     for l in [12,13,14,15,16]:
         seqs=df.query('len==@l')['aminoAcid'].values 
-        feats = get_feats_tensor(seqs, device=device) #Gets the feature tensors 
+        feats = get_feats_tensor(seqs, device=device, encoding=encoding) #Gets the feature tensors 
         _, _, probs = models[l](feats) #Runs the prediction
         df.loc[df['len']==l,'prob_cancer'] = probs.detach().cpu()[:,1] 
     

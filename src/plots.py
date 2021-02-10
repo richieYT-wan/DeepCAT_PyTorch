@@ -30,9 +30,7 @@ SQRLAYOUT = {
     4: [2, 2, (16,16)],
     5: [2, 3, (24,16)]
 }    
-def load_losses(keys, PATH):
-    
-    
+def load_losses(PATH, keys = [12,13,14,15,16]):
     fns=['train_losses_dict.pkl','val_losses_dict.pkl', 
          'val_accs_dict.pkl','val_aucs_dict.pkl','val_f1_dict.pkl']
     z = []
@@ -50,7 +48,29 @@ def load_losses(keys, PATH):
     val_f1_dict = dict((k, z[4][k]) for k in keys) 
     print("Values loaded")
     return train_loss_dict, val_loss_dict, val_accs_dict, val_aucs_dict, val_f1_dict 
-                            
+
+def get_losses_df(PATH, keys = [12,13,14,15,16]):
+    train, val, accs, aucs, f1 = load_losses(PATH,keys)
+    seqlist = []
+    epochlist = []
+    for k in keys:
+        seqlist += [k]*len(train[k])
+        epochlist += range(len(train[k]))
+
+    result = pd.DataFrame(data =[] ,columns=['epoch','seqlen','value','type'])
+    names = ['train_loss','val_loss','val_accs','val_aucs','val_f1']
+    for index, tmp in enumerate([train, val, accs, aucs, f1]):
+        tmp_df = pd.DataFrame.from_dict(tmp, orient = 'columns')
+        tmp_df['epoch'] = range(len(tmp_df))
+        melt = tmp_df.melt(id_vars='epoch', var_name = 'seqlen', value_name = 'value')
+        melt['type'] = names[index]
+        #result = pd.merge(result, melt, left_index=True, right_index=True, suffixes=('', '_delme'))
+        #result = result[[c for c in result.columns if not c.endswith('_delme')]]
+        result = pd.concat([result,melt])
+    
+    return result
+        
+
 def plot_loss(train_dict, val_dict, keys, save = 'losses.jpg', folder = None):
     num = len(keys)
     fig, axes = plt.subplots(EPOCHLAYOUT[num][0],EPOCHLAYOUT[num][1], figsize = EPOCHLAYOUT[num][2])
@@ -151,6 +171,7 @@ def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys,
         plt.savefig(OUTPATH+save)   
         
 def plot_PPV(df, save='PPV.jpg', folder =None):
+    """Need to use get_preds_df"""
     keys = df['seqlen'].unique()
     num = len(keys) #Number of keys (plots needed)
     fig, axes = plt.subplots(EPOCHLAYOUT[num][0],EPOCHLAYOUT[num][1], figsize = EPOCHLAYOUT[num][2])
@@ -195,3 +216,5 @@ def plot_PPV(df, save='PPV.jpg', folder =None):
         plt.savefig(os.path.join(folder,save))
     else:
         plt.savefig(OUTPATH+save)
+        
+#def plot_loss_seaborn(df)

@@ -43,6 +43,7 @@ def args_parser():
     parser.add_argument('-v', type=str_to_bool, default=True, help="Whether to print progress. (True/False), True by default")
     parser.add_argument('-metric', default="val", help = 'Which metric to use to log the best weights. Takes values in [val, acc, auc, f1]. By default, it is val.')
     parser.add_argument('-plots', type=str_to_bool, default = False, help = 'Whether to save the training stats as plots. False by default.')
+    parser.add_argument('-arch', type = str, default ='deepcat', help = 'Which architecture to use (deepcat by default)')
     #parser.add_argument('-loss', type = torch.)
     #parser.add_argument('')
     #parser.add_argument('--opt', dest=optim, type=torch.optim)
@@ -68,12 +69,12 @@ def main():
     nb_epochs = args.nb_epochs
     #if len(nb_epochs)==1: nb_epochs*=len(KEYS)
     mbs = args.batchsize #mini-batch_size
-    
+    arch = args.arch.lower()
     #returns dictionaries!! e.g. train_feats[12] returns the feats for L=12
     if args.test==True:
-        train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True) 
+        train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = arch) 
     elif args.test==False:
-        train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True) 
+        train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = arch) 
     #Set device to None. We don't want to send every tensor to 'cuda' as it will run out of memory. 
     #Instead, the tensors should be sent to Cuda only when needed.
     #Ex when L = 12, all the L = 12 tensors are sent to cuda, the rest stay on 'cpu'.
@@ -81,10 +82,10 @@ def main():
     
     if torch.cuda.is_available():
         DEVICE = torch.device('cuda')
-        print("Using : {}".format(DEVICE))
+        print("\nNow using : {}".format(DEVICE))
     else:
         DEVICE = torch.device('cpu')
-        print("Using : {}".format(DEVICE))
+        print("\nNow using : {}".format(DEVICE))
 
     #Non-robust implementation of this checking for now
     crossvalidate = args.valmode.lower() == 'kcv'
@@ -98,7 +99,7 @@ def main():
         print("### ============ Using naïve-split. Ratio = {} ============ ###".format(ratio))
 
     #Getting the models using get_models from src.models
-    model_dict = get_models(KEYS)
+    model_dict = get_models(KEYS, arch=arch)
     train_loss_dict = {}
     val_loss_dict = {}
     val_accs_dict = {}
@@ -164,27 +165,23 @@ def main():
     
     if args.test == True:
         print("\n### ============ Evaluating models on test set. ============ ###\n")
-        models = load_models(KEYS, OUTDIR) #Reloading the best weights
+        models = load_models(OUTDIR, KEYS, arch=arch) #Reloading the best weights
         _, test_accs, test_aucs, test_f1s, test_curves = test_eval(models, KEYS, nn.CrossEntropyLoss(),
                                                                    test_feats, test_labels, return_curve=True)
-        #print("AUCs for the test set for :")#
-        #or k in test_aucs.keys():
-        #   print("\tL = {} : AUC = ".format(k), test_aucs[k])
-            
+
         preds_df = get_pred_df(models, test_feats, test_labels)
         test_results_df = pd.DataFrame(index=KEYS, columns = ['accuracy','AUC','f1_score','curve'])
         print("Results on the test set:")
 
-        #curve_df = pd.DataFrame(index=KEYS, columns = ['fpr','tpr','thr'])
         for key in KEYS:
             test_results_df.loc[key][['accuracy','AUC','f1_score']] = test_accs[key], test_aucs[key], test_f1s[key]
-            #curve_df.loc[key][['fpr','tpr','thr']] = test_curves[key][0], test_curves[key][1], test_curves[key][2]
+
 
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(test_results_df[['accuracy','AUC','f1_score']])
             
         print("\n### ============ Saving results to CSV and ROC_curves_df as pickle ============ ###\n")
-        test_results_df.to_csv(os.path.join(OUTDIR+'test_results.csv'))
+        test_results_df.to_csv(os.path.join(OUTDIR,'test_results.csv'))
         with open(os.path.join(PICKLEDIR,'roc_curves_dict.pkl'), 'wb') as f:
             pickle.dump(test_curves, f)
 

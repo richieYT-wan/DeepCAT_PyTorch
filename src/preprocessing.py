@@ -10,25 +10,26 @@ PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
 #Loading the pre-set Dictionary with values from PCA1-15 AA indices
 PATH = os.getcwd()
 
+#Merged dict : [atchley1 ... atchley5, PCA1,...,PCA15]
 if 'notebook' in PATH:
     with open('../src/AAidx_dict.pkl', 'rb') as f: 
         AAidx_Dict = pickle.load(f) 
+    with open('../src/merged_dict.pkl', 'rb') as g: 
+        merged_dict = pickle.load(g) 
 
 elif 'src' in PATH :
     with open('./AAidx_dict.pkl', 'rb') as f: 
         AAidx_Dict = pickle.load(f) 
+    with open('./merged_dict.pkl', 'rb') as g: 
+        merged_dict = pickle.load(g) 
 else :
     with open('./src/AAidx_dict.pkl', 'rb') as f: 
         AAidx_Dict = pickle.load(f) 
-    
+    with open('./src/merged_dict.pkl', 'rb') as g: 
+        merged_dict = pickle.load(g) 
 
 n_feats = len(AAidx_Dict['C']) # 15 features
 
-#def standardize(train_data, test_data):
-#    """
-#    Sets the train data's mean to 1 and variance to 0
-#    Applies the same operation to the test set
-#    """
 
 def one_hot_labels(target):
     tmp = target.new_zeros(target.size(0), target.max() + 1)
@@ -92,8 +93,21 @@ def aaindex_encoding(seq, device):
         aa_encoding = aa_encoding.to(device)
     return aa_encoding
 
+def aaidx_atchley_encoding(seq, device):
+    """Encodes the AA indices to a given sequence"""
+    n_aa = len(seq)
+    temp = np.zeros([n_aa, 20], dtype=np.float32)
+    for idx in range(n_aa):
+        aa = seq[idx]
+        temp[idx] = merged_dict[aa]
+    temp = np.transpose(temp)
+    aa_encoding = torch.from_numpy(temp)
+    aa_encoding = aa_encoding.unsqueeze(0)
+    if device == torch.device('cuda'):
+        aa_encoding = aa_encoding.to(device)
+    return aa_encoding
 
-def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,17), device=None, shuffle=True):
+def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,17), device=None, shuffle=True, encoding = 'deepcat'):
     """For each CDR3 dataset (tumor and normal) sequences, get the feature vectors and labels"""
     
     #Normally, sequences are extracted as lists, but maybe I can modify something in read_sequences to return array instead of list
@@ -117,12 +131,18 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
         data = []
         for seqs in tumor_sequences[mask_tumor]:
             if len(PAT.findall(seqs))>0:continue #Skipping a sequence if it matches an unwanted CDR3 pattern 
-            data.append(aaindex_encoding(seqs, device))
+            if encoding == 'deepcat': 
+                data.append(aaindex_encoding(seqs, device))
+            elif encoding == 'richie':
+                data.append(aaidx_atchley_encoding(seqs, device))
         nb_tumors = len(data)
 
         for seqs in normal_sequences[mask_normal]:
             if len(PAT.findall(seqs))>0:continue #Skipping a sequence if it matches an unwanted CDR3 pattern 
-            data.append(aaindex_encoding(seqs, device))
+            if encoding == 'deepcat': 
+                data.append(aaindex_encoding(seqs, device))
+            elif encoding == 'richie':
+                data.append(aaidx_atchley_encoding(seqs, device))
         nb_normal = len(data[nb_tumors:])
         #Getting the labels 
         labels = torch.tensor(([1]*nb_tumors+[0]*nb_normal), dtype=torch.int64)
@@ -147,7 +167,7 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
     print("Done loading, returning features and labels.")
     return feature_dict, label_dict
 
-def get_train_test_data(directory, keys, device=None, shuffle = True):
+def get_train_test_data(directory, keys, device=None, shuffle = True, encoding = 'deepcat'):
     """
     From a directory, reads the .txt and generates the corresponding train/test tumor-normal data (features+label). Assumes the files are named as 'NormalCDR3.txt', 'NormalCDR3_test.txt', 'TumorCDR3.txt', 'TumorCDR3_test.txt'
     """
@@ -170,9 +190,9 @@ def get_train_test_data(directory, keys, device=None, shuffle = True):
             elif 'normal' in lower:
                 train_normal = read_seq(directory+f)
     print("\nTrain")
-    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle)
+    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle, encoding)
     print("\nTest")
-    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle)
+    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle, encoding)
     
     return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
             
@@ -190,10 +210,13 @@ def read_ismart(filename):
     #return seqs, df
     return df
 
-def get_feats_tensor(sequences, device):
+def get_feats_tensor(sequences, device, encoding='deepcat'):
     "Sequences : numpy array"
     feats = []
     for seq in sequences:
-        feats.append(aaindex_encoding(seq, device))
+        if encoding == 'deepcat': 
+            feats.append(aaindex_encoding(seq, device))
+        elif encoding == 'richie':
+            feats.append(aaidx_atchley_encoding(seq, device))
     feats = torch.stack(feats).to(device)
     return feats
