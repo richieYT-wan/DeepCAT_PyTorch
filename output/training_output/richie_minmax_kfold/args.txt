@@ -1,0 +1,17 @@
+###### ARGS::
+indir:./TrainingData/
+outdir:richie_minmax_kfold
+nb_epochs:601
+lr:5e-05
+keys:[12, 13, 14, 15, 16]
+batchsize:250
+valmode:KCV
+kfold:3
+ratio:0.3333333333333333
+test:True
+v:True
+metric:val
+plots:True
+arch:richie
+enc:aa_atchley
+scale:minmax
