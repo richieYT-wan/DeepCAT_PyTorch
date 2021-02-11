@@ -29,6 +29,7 @@ def args_parser():
     parser.add_argument('-outdir', type = str, default= 'results/', help = 'Relative path to the output directory where the best weights as well as figures, training losses/accuracies etc. are logged. By default, if it does not exist, /run_output/results/ will be created')
     parser.add_argument('-v', type=str_to_bool, default=True, help="Whether to print progress. (True/False), True by default")
     parser.add_argument('-arch', type = str, default = 'deepcat', help ='Architecture to use.')
+    parser.add_argument('-enc', type = str, default = 'aaidx', help = 'Which AA encoding to use. Can be aaidx or aa_atchley. By default, it is aaidx. CHECK THAT ENCODING IS COMPATIBLE WITH THE ARCH YOU WANT TO USE!')
 
 
     return parser.parse_args()
@@ -38,6 +39,7 @@ def main():
     args = args_parser()    
     KEYS = [12,13,14,15,16]
     arch = args.arch.lower()
+    encoding = args.enc.lower()
     #cuda check
     if torch.cuda.is_available():
         DEVICE = torch.device('cuda')
@@ -67,7 +69,7 @@ def main():
         scores = []
         #Iterating over each file and getting the scores for each file
         for filename in files:
-            cancer_score = predict_score(models, filename, device=DEVICE, encoding=arch)
+            cancer_score = predict_score(models, filename, device=DEVICE, encoding=encoding)
             scores.append(cancer_score)
             
         #Getting the mapping and saving key:value with key = filename, value = cancer score

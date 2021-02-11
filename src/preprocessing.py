@@ -10,25 +10,27 @@ PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
 #Loading the pre-set Dictionary with values from PCA1-15 AA indices
 PATH = os.getcwd()
 
+
 #Merged dict : [atchley1 ... atchley5, PCA1,...,PCA15]
 if 'notebook' in PATH:
     with open('../src/AAidx_dict.pkl', 'rb') as f: 
         AAidx_Dict = pickle.load(f) 
     with open('../src/merged_dict.pkl', 'rb') as g: 
-        merged_dict = pickle.load(g) 
+        merged_dict = pickle.load(g)      
+    with open('../src/minmax_aaidx.pkl','rb') as h:
+        minmax_aaidx = pickle.load(h)
+    with open('../src/minmax_merged.pkl','rb') as i:
+        minmax_merged = pickle.load(i)
 
-elif 'src' in PATH :
-    with open('./AAidx_dict.pkl', 'rb') as f: 
-        AAidx_Dict = pickle.load(f) 
-    with open('./merged_dict.pkl', 'rb') as g: 
-        merged_dict = pickle.load(g) 
 else :
     with open('./src/AAidx_dict.pkl', 'rb') as f: 
         AAidx_Dict = pickle.load(f) 
     with open('./src/merged_dict.pkl', 'rb') as g: 
         merged_dict = pickle.load(g) 
-
-n_feats = len(AAidx_Dict['C']) # 15 features
+    with open('./src/minmax_aaidx.pkl','rb') as h:
+        minmax_aaidx = pickle.load(h)
+    with open('./src/minmax_merged.pkl','rb') as i:
+        minmax_merged = pickle.load(i)
 
 
 def one_hot_labels(target):
@@ -78,14 +80,20 @@ def read_seq(filename):
             if not seq.startswith('C') or not seq.endswith('F'):continue
             data.append(seq)
     return np.array(data)
+minmax_aaidx 
+minmax_merged
 
-def aaindex_encoding(seq, device):
+def aaindex_encoding(seq, device, scaling ='minmax'):
     """Encodes the AA indices to a given sequence"""
     n_aa = len(seq)
-    temp = np.zeros([n_aa, n_feats], dtype=np.float32)
+
+    temp = np.zeros([n_aa, 15], dtype=np.float32)
     for idx in range(n_aa):
         aa = seq[idx]
-        temp[idx] = AAidx_Dict[aa]
+        if scaling == 'minmax': 
+            temp[idx]=minmax_aaidx[aa]
+        else:
+            temp[idx] = AAidx_Dict[aa]
     temp = np.transpose(temp)
     aa_encoding = torch.from_numpy(temp)
     aa_encoding = aa_encoding.unsqueeze(0)
@@ -93,13 +101,16 @@ def aaindex_encoding(seq, device):
         aa_encoding = aa_encoding.to(device)
     return aa_encoding
 
-def aaidx_atchley_encoding(seq, device):
-    """Encodes the AA indices to a given sequence"""
+def aaidx_atchley_encoding(seq, device, scaling ='minmax'):
+    """Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
     n_aa = len(seq)
     temp = np.zeros([n_aa, 20], dtype=np.float32)
     for idx in range(n_aa):
         aa = seq[idx]
-        temp[idx] = merged_dict[aa]
+        if scaling == 'minmax': 
+            temp[idx]=minmax_merged[aa]
+        else:
+            temp[idx] = merged_dict[aa]
     temp = np.transpose(temp)
     aa_encoding = torch.from_numpy(temp)
     aa_encoding = aa_encoding.unsqueeze(0)
@@ -107,7 +118,8 @@ def aaidx_atchley_encoding(seq, device):
         aa_encoding = aa_encoding.to(device)
     return aa_encoding
 
-def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,17), device=None, shuffle=True, encoding = 'deepcat'):
+def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,17), 
+                             device=None, shuffle=True, encoding = 'aaidx', scaling='minmax'):
     """For each CDR3 dataset (tumor and normal) sequences, get the feature vectors and labels"""
     
     #Normally, sequences are extracted as lists, but maybe I can modify something in read_sequences to return array instead of list
@@ -131,18 +143,18 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
         data = []
         for seqs in tumor_sequences[mask_tumor]:
             if len(PAT.findall(seqs))>0:continue #Skipping a sequence if it matches an unwanted CDR3 pattern 
-            if encoding == 'deepcat': 
-                data.append(aaindex_encoding(seqs, device))
-            elif encoding == 'richie':
-                data.append(aaidx_atchley_encoding(seqs, device))
+            if encoding == 'aaidx': 
+                data.append(aaindex_encoding(seqs, device, scaling))
+            elif encoding == 'aa_atchley':
+                data.append(aaidx_atchley_encoding(seqs, device, scaling))
         nb_tumors = len(data)
 
         for seqs in normal_sequences[mask_normal]:
             if len(PAT.findall(seqs))>0:continue #Skipping a sequence if it matches an unwanted CDR3 pattern 
-            if encoding == 'deepcat': 
-                data.append(aaindex_encoding(seqs, device))
-            elif encoding == 'richie':
-                data.append(aaidx_atchley_encoding(seqs, device))
+            if encoding == 'aaidx': 
+                data.append(aaindex_encoding(seqs, device, scaling))
+            elif encoding == 'aa_atchley':
+                data.append(aaidx_atchley_encoding(seqs, device, scaling))
         nb_normal = len(data[nb_tumors:])
         #Getting the labels 
         labels = torch.tensor(([1]*nb_tumors+[0]*nb_normal), dtype=torch.int64)
@@ -167,7 +179,8 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
     print("Done loading, returning features and labels.")
     return feature_dict, label_dict
 
-def get_train_test_data(directory, keys, device=None, shuffle = True, encoding = 'deepcat'):
+def get_train_test_data(directory, keys, device=None, shuffle = True, 
+                        encoding = 'aaidx', scaling ='minmax'):
     """
     From a directory, reads the .txt and generates the corresponding train/test tumor-normal data (features+label). Assumes the files are named as 'NormalCDR3.txt', 'NormalCDR3_test.txt', 'TumorCDR3.txt', 'TumorCDR3_test.txt'
     """
@@ -210,13 +223,13 @@ def read_ismart(filename):
     #return seqs, df
     return df
 
-def get_feats_tensor(sequences, device, encoding='deepcat'):
+def get_feats_tensor(sequences, device, encoding='aaidx', scaling = 'minmax'):
     "Sequences : numpy array"
     feats = []
     for seq in sequences:
-        if encoding == 'deepcat': 
-            feats.append(aaindex_encoding(seq, device))
-        elif encoding == 'richie':
-            feats.append(aaidx_atchley_encoding(seq, device))
+        if encoding == 'aaidx': 
+            feats.append(aaindex_encoding(seq, device, scaling))
+        elif encoding == 'aa_atchley':
+            feats.append(aaidx_atchley_encoding(seq, device, scaling))
     feats = torch.stack(feats).to(device)
     return feats

@@ -1,0 +1,26 @@
+#Allows relative imports
+import os
+import sys
+module_path = os.path.abspath(os.path.join('..'))
+if module_path not in sys.path:
+    sys.path.append(module_path)
+#imports 
+from src.preprocessing import *
+from src.models import *
+from src.train_eval_helpers import *
+from src.plots import *
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+%load_ext autoreload
+%autoreload 2
+#checking gpu status
+if torch.cuda.is_available():
+    device = torch.device('cuda')
+    print("Using : {}".format(device))
+else:
+    device = torch.device('cpu')
+    print("Using : {}".format(device))
+
+RANGE = range(12,17)
+TRAINDIR = '../TrainingData/'

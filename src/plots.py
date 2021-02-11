@@ -12,6 +12,11 @@ sns.set_style('darkgrid')
 
 os.path.abspath(os.path.join(os.path.os.getcwd(), os.pardir))
 
+SAMPLES_ = {12:3182,
+            13:6412,
+            14:8481,
+            15:7040,
+            16:2846,}
 
 OUTPATH = os.path.join(os.path.abspath(os.path.join(os.path.os.getcwd(), os.pardir)),'figures/')
 
@@ -113,7 +118,8 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
                            'm-', lw = 0.8, label = 'AUC={:.4f}'.format(curve_dict[ll][0]))
             ax[index].plot(pts, pts, 'k--', lw = '0.4', label = 'random')
             ax[index].legend(loc='best')
-            ax[index].set_title('ROC_AUC on test set for L = {}'.format(ll))
+            ax[index].set_title('ROC_AUC on test set for L = {}'\
+                                ', total {} samples (pos+neg)'.format(ll,SAMPLES_[ll]))
             ax[index].set_xlabel('FPR')
             ax[index].set_ylabel('TPR')
         if num == 5 : fig.delaxes(ax[-1])
@@ -125,9 +131,11 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
                 'm-', lw = 0.8, label = 'AUC={}'.format(curve_dict[ll][0]))
         axes.plot(pts, pts, 'k--', lw = '0.4', label = 'random')
         axes.legend(loc='best')
-        axes.set_title('ROC_AUC on test set for L = {}'.format(ll))
+        axes.set_title('ROC_AUC on test set for L = {}'\
+                       ', total {} samples (pos+neg)'.format(ll,SAMPLES_[ll]))
         axes.set_xlabel('FPR')
         axes.set_ylabel('TPR')
+    
     if save == None:
         return
     if folder is not None:
@@ -163,6 +171,7 @@ def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys,
         axes.set_title('Prediction stats during training for L = {}'.format(ll),fontweight='bold')
         axes.set_xlabel('epoch')
         axes.set_ylabel('%')
+    
     if save == None:
         return            
     if folder is not None:
@@ -193,7 +202,8 @@ def plot_PPV(df, save='PPV.jpg', folder =None):
             ax[i].semilogx(range(0,len(df.query('seqlen==@sl')['y_true'])), perfect[sl],
                            'k-.', lw=0.5, label = '"Perfect prediction"')
             ax[i].legend(loc='best')
-            ax[i].set_title('PPV vs (TP+FP) for L ={}'.format(sl), weight='bold')
+            ax[i].set_title('PPV vs (TP+FP) for L ={}'\
+                            ', total {} samples (pos+neg)'.format(sl, SAMPLES_[sl]), weight='bold')
             ax[i].set_ylabel('PPV')
             ax[i].set_xlabel('Number of predictions (logscale)')
         #a.ygrid()
@@ -206,10 +216,11 @@ def plot_PPV(df, save='PPV.jpg', folder =None):
         axes.semilogx(range(0,len(df.query('seqlen==@sl')['y_true'])), perfect[sl],
                       'k-.', lw=0.5, label = '"Perfect prediction"')
         axes.legend(loc='best')
-        axes.set_title('PPV vs (TP+FP) for L ={}'.format(sl), weight='bold')
+        axes.set_title('PPV vs (TP+FP) for L ={}'\
+                            ', total {} samples (pos+neg)'.format(sl, SAMPLES_[sl]), weight='bold')
         axes.set_ylabel('PPV')
         axes.set_xlabel('Number of predictions (logscale)')
-        
+    
     if save == None:
         return            
     if folder is not None:

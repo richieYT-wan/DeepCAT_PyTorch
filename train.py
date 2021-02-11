@@ -43,9 +43,9 @@ def args_parser():
     parser.add_argument('-metric', default="val", help = 'Which metric to use to log the best weights. Takes values in [val, acc, auc, f1]. By default, it is val.')
     parser.add_argument('-plots', type=str_to_bool, default = False, help = 'Whether to save the training stats as plots. False by default.')
     parser.add_argument('-arch', type = str, default ='deepcat', help = 'Which architecture to use (deepcat by default)')
-    #parser.add_argument('-loss', type = torch.)
-    #parser.add_argument('')
-    #parser.add_argument('--opt', dest=optim, type=torch.optim)
+    parser.add_argument('-enc', type = str, default = 'aaidx', help = 'Which AA encoding to use. Can be aaidx or aa_atchley. By default, it is aaidx. CHECK THAT ENCODING IS COMPATIBLE WITH THE ARCH YOU WANT TO USE!')
+    parser.add_argument('-scale', type = str, default='minmax', help = 'Scaling of the features. By default, features are scaled to minmax(-1,1)')
+
     return parser.parse_args()
 
 def main():
@@ -69,11 +69,14 @@ def main():
     #if len(nb_epochs)==1: nb_epochs*=len(KEYS)
     mbs = args.batchsize #mini-batch_size
     arch = args.arch.lower()
+    encoding = args.enc.lower()
+    sc = args.scale.lower()
     #returns dictionaries!! e.g. train_feats[12] returns the feats for L=12
     if args.test==True:
-        train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = arch) 
+        train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc) 
+        print(test_feats[12].shape)
     elif args.test==False:
-        train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = arch) 
+        train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc) 
     #Set device to None. We don't want to send every tensor to 'cuda' as it will run out of memory. 
     #Instead, the tensors should be sent to Cuda only when needed.
     #Ex when L = 12, all the L = 12 tensors are sent to cuda, the rest stay on 'cpu'.
@@ -157,8 +160,13 @@ def main():
         with open(picklename, 'wb') as f:
             pickle.dump(item, f)
             
-    with open(os.path.join(OUTDIR,'args.txt'), 'wb') as f:
-        pickle.dump(str(args), f)
+    #with open(os.path.join(OUTDIR,'args.txt'), 'wb') as f:
+    #    pickle.dump(str(args), f)
+    with open(os.path.join(OUTDIR,'args.txt'), 'w') as f:
+        d = vars(args)
+        f.write("###### ARGS::\n")
+        for k in d.keys():
+            f.write("{}:{}\n".format(k, d[k]))
         
     del model_dict 
     
@@ -180,7 +188,7 @@ def main():
             print(test_results_df[['accuracy','AUC','f1_score']])
             
         print("\n### ============ Saving results to CSV and ROC_curves_df as pickle ============ ###\n")
-        test_results_df.to_csv(os.path.join(OUTDIR,'test_results.csv'))
+        test_results_df.to_csv(os.path.join(OUTDIR,OUTDIR+'test_results.csv'))
         with open(os.path.join(PICKLEDIR,'roc_curves_dict.pkl'), 'wb') as f:
             pickle.dump(test_curves, f)
 

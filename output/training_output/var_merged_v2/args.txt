@@ -1,0 +1,17 @@
+###### ARGS::
+indir:./TrainingData/
+outdir:var_merged_v2
+nb_epochs:601
+lr:6.7e-05
+keys:[12, 13, 14, 15, 16]
+batchsize:250
+valmode:naive
+kfold:5
+ratio:0.3333333333333333
+test:True
+v:True
+metric:val
+plots:True
+arch:var_merged_v2
+enc:aa_atchley
+scale:minmax
