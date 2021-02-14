@@ -419,7 +419,7 @@ def get_models(keys=[12,13,14,15,16], arch = 'deepcat'):
         del model
     return model_dict
 
-def load_models(PATH, keys=[12,13,14,15,16], arch = 'deepcat'):
+def load_models(PATH, keys=[12,13,14,15,16], arch = 'deepcat', eval_=False):
     model_dict = get_models(keys, arch)
     files = os.listdir(PATH)
     files = [f for f in files if '.pth.tar' in f]
@@ -433,6 +433,7 @@ def load_models(PATH, keys=[12,13,14,15,16], arch = 'deepcat'):
                 chkpt = torch.load(name)
             else:continue
         model_dict[key].load_state_dict(chkpt['state_dict'])
+        if eval_: model_dict[key].eval()
     print("Models & weights loaded")
     return model_dict
 

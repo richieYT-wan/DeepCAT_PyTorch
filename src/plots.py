@@ -89,6 +89,7 @@ def plot_loss(train_dict, val_dict, keys, save = 'losses.jpg', folder = None):
             ax[index].set_xlabel('epoch')
             ax[index].set_ylabel('Loss')
         if num == 5 : fig.delaxes(ax[-1])
+            
     if num == 1:
         ll=keys[0]
         print(ll)
@@ -100,11 +101,13 @@ def plot_loss(train_dict, val_dict, keys, save = 'losses.jpg', folder = None):
         axes.set_xlabel('epoch')
         axes.set_ylabel('Loss')
     if save == None:
-        return
+        return fig, axes
     if folder is not None:
         plt.savefig(os.path.join(folder,save))
+        return fig, axes
     else:
         plt.savefig(OUTPATH+save)
+        return fig, axes
 
 
 def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
@@ -137,11 +140,14 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
         axes.set_ylabel('TPR')
     
     if save == None:
-        return
+        return fig, axes
     if folder is not None:
         plt.savefig(os.path.join(folder,save))
+        return fig, axes
+
     else:
         plt.savefig(OUTPATH+save)
+        return fig, axes
         
         
 def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys, 

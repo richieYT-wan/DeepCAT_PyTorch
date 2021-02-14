@@ -41,8 +41,7 @@ def train_model_step(model, criterion, optimizer, train_data, train_labels, mini
         optimizer.step()
         train_loss += loss.item()
     train_loss /= math.floor(len(train_labels)/mini_batch_size)
-    #if e%200==0:
-     #   print("Loss at epoch {e} : {l}".format(e=epoch,l=train_loss))
+
     return train_loss
 
 def eval_model(model, criterion, data, labels, return_curve=False):
@@ -55,15 +54,16 @@ def eval_model(model, criterion, data, labels, return_curve=False):
     
     #Full test_set in case of unbalanced data
     #Logits = raw for loss, predictions = argmax(logit), probs = softmax(logit)
-    logits, predictions, probs = model(data) 
-    #predictions = logits.argmax(1)
-    #probs = logits.softmax(1)
-    
-    eval_loss = criterion(logits, labels) #criterion = nn.CEL
-    acc = accuracy_score(labels.cpu(), predictions.cpu())
-    AUC = roc_auc_score(one_hot, probs.detach().cpu())
-    f1 = f1_score(labels.cpu(), predictions.cpu(), labels=None, pos_label=1)
-    
+    with torch.no_grad():
+        logits, predictions, probs = model(data) 
+        #predictions = logits.argmax(1)
+        #probs = logits.softmax(1)
+        
+        eval_loss = criterion(logits, labels) #criterion = nn.CEL
+        acc = accuracy_score(labels.cpu(), predictions.cpu())
+        AUC = roc_auc_score(one_hot, probs.detach().cpu())
+        f1 = f1_score(labels.cpu(), predictions.cpu(), labels=None, pos_label=1)
+        
     if return_curve:
         curve = roc_curve(labels.detach().cpu(), probs.detach().cpu()[:,1], pos_label=1)
         return eval_loss.item(), acc, AUC, f1, curve

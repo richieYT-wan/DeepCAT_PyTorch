@@ -74,7 +74,6 @@ def main():
     #returns dictionaries!! e.g. train_feats[12] returns the feats for L=12
     if args.test==True:
         train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc) 
-        print(test_feats[12].shape)
     elif args.test==False:
         train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc) 
     #Set device to None. We don't want to send every tensor to 'cuda' as it will run out of memory. 
@@ -188,7 +187,7 @@ def main():
             print(test_results_df[['accuracy','AUC','f1_score']])
             
         print("\n### ============ Saving results to CSV and ROC_curves_df as pickle ============ ###\n")
-        test_results_df.to_csv(os.path.join(OUTDIR,OUTDIR+'test_results.csv'))
+        test_results_df.to_csv(os.path.join(OUTDIR,(args.outdir+'test_results.csv')))
         with open(os.path.join(PICKLEDIR,'roc_curves_dict.pkl'), 'wb') as f:
             pickle.dump(test_curves, f)
 

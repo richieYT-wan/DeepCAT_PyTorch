@@ -9,8 +9,6 @@ PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
 
 #Loading the pre-set Dictionary with values from PCA1-15 AA indices
 PATH = os.getcwd()
-
-
 #Merged dict : [atchley1 ... atchley5, PCA1,...,PCA15]
 if 'notebook' in PATH:
     with open('../src/AAidx_dict.pkl', 'rb') as f: 
@@ -80,8 +78,7 @@ def read_seq(filename):
             if not seq.startswith('C') or not seq.endswith('F'):continue
             data.append(seq)
     return np.array(data)
-minmax_aaidx 
-minmax_merged
+
 
 def aaindex_encoding(seq, device, scaling ='minmax'):
     """Encodes the AA indices to a given sequence"""
@@ -101,7 +98,7 @@ def aaindex_encoding(seq, device, scaling ='minmax'):
         aa_encoding = aa_encoding.to(device)
     return aa_encoding
 
-def aaidx_atchley_encoding(seq, device, scaling ='minmax'):
+def aaidx_atchley_encoding(seq, device=None, scaling ='minmax'):
     """Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
     n_aa = len(seq)
     temp = np.zeros([n_aa, 20], dtype=np.float32)
@@ -203,9 +200,9 @@ def get_train_test_data(directory, keys, device=None, shuffle = True,
             elif 'normal' in lower:
                 train_normal = read_seq(directory+f)
     print("\nTrain")
-    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle, encoding)
+    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle, encoding, scaling)
     print("\nTest")
-    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle, encoding)
+    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle, encoding, scaling)
     
     return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
             
