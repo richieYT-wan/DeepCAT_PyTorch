@@ -119,6 +119,7 @@ def main():
         filename = model_dict[key].name+'_best_'+args.metric+'.pth.tar'
         FNAME = os.path.join(OUTDIR, filename)
         
+        #Simple naïve split here
         if naive:
             train_data, train_target, eval_data, eval_target = naive_split(data_temp, labels_temp, ratio)
             train_losses, val_losses, val_accs, val_aucs, val_f1 = train_model_full(model_dict[key], criterion, 
@@ -127,9 +128,10 @@ def main():
                                                                             eval_data, eval_target, 
                                                                             mbs, fname=FNAME,
                                                                             save=args.metric,args=args,verbose=True)    
+        #K-fold crossvalidation here
         elif crossvalidate:
-            train_losses, val_losses, val_accs, val_aucs, val_f1 = kfold_cv(model_dict[key], criterion, optimizer, nb_epochs, 
-                                                                            kfold, mbs, data_temp, labels_temp, verbose=args.v)
+            train_losses, val_losses, val_accs, val_aucs, val_f1 = kfold_cv(model_dict[key], data_temp, labels_temp, optimizer, 
+                                                                            nb_epochs, kfold, mbs, criterion = nn.CrossEntropyLoss(), verbose=args.v)
             
             ratio = 1/kfold
             train_data, train_target, eval_data, eval_target = naive_split(data_temp, labels_temp, ratio)
@@ -172,8 +174,8 @@ def main():
     if args.test == True:
         print("\n### ============ Evaluating models on test set. ============ ###\n")
         models = load_models(OUTDIR, KEYS, arch=arch) #Reloading the best weights
-        _, test_accs, test_aucs, test_f1s, test_curves = test_eval(models, KEYS, nn.CrossEntropyLoss(),
-                                                                   test_feats, test_labels, return_curve=True)
+        _, test_accs, test_aucs, test_f1s, test_curves = test_eval(models, test_feats, test_labels, KEYS, nn.CrossEntropyLoss(), 
+                                                                   return_curve=True)
 
         preds_df = get_pred_df(models, test_feats, test_labels)
         test_results_df = pd.DataFrame(index=KEYS, columns = ['accuracy','AUC','f1_score','curve'])
@@ -198,8 +200,8 @@ def main():
         if not os.path.exists(FOLDER):
             os.makedirs(FOLDER, exist_ok = True) 
         #TODO : args.valmode = 'naive' or 'KCV' must implement plotting for KCV
-        plot_loss(train_loss_dict, val_loss_dict, KEYS, folder=FOLDER)#, plotmode=args.valmode)
-        plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, KEYS, folder = FOLDER)#, plotmode=args.valmode)
+        plot_loss(train_loss_dict, val_loss_dict, KEYS,kcv=crossvalidate,  folder=FOLDER)
+        plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, KEYS, kcv=crossvalidate, folder = FOLDER)
         
         if args.test == True:
             plot_roc_curve(test_curves, KEYS, save = 'testset_roc_curves.jpg', folder = FOLDER)

@@ -1,0 +1,17 @@
+###### ARGS::
+indir:TrainingDataFiltered
+outdir:deepcat_NotScaled_filtered
+nb_epochs:1000
+lr:0.0003
+keys:[12, 13, 14, 15, 16]
+batchsize:250
+valmode:naive
+kfold:5
+ratio:0.3333333333333333
+test:True
+v:True
+metric:val
+plots:True
+arch:deepcat
+enc:aaidx
+scale:None

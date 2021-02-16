@@ -83,7 +83,6 @@ def read_seq(filename):
 def aaindex_encoding(seq, device, scaling ='minmax'):
     """Encodes the AA indices to a given sequence"""
     n_aa = len(seq)
-
     temp = np.zeros([n_aa, 15], dtype=np.float32)
     for idx in range(n_aa):
         aa = seq[idx]
@@ -121,14 +120,13 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
     
     #Normally, sequences are extracted as lists, but maybe I can modify something in read_sequences to return array instead of list
     if type(tumor_sequences)!=np.ndarray : tumor_sequences = np.array(tumor_sequences)
-    if type(tumor_sequences)!=np.ndarray : normal_sequences = np.array(normal_sequences)
+    if type(normal_sequences)!=np.ndarray : normal_sequences = np.array(normal_sequences)
 
     #length of each datapoint (sequence)
     seqlens_tumor = np.array([len(seqs) for seqs in tumor_sequences]) 
     seqlens_normal = np.array([len(seqs) for seqs in normal_sequences])
     print("Getting data")
     feature_dict, label_dict = {}, {}
-    
     #Only keep sequences with length 12 to 16
     for length in keys:
         #Using numpy to create mask for fancy indexing, converting to tensors later

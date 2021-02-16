@@ -44,7 +44,7 @@ def train_model_step(model, criterion, optimizer, train_data, train_labels, mini
 
     return train_loss
 
-def eval_model(model, criterion, data, labels, return_curve=False):
+def eval_model(model, data, labels, criterion=nn.CrossEntropyLoss(), return_curve=False):
     """
     Takes a model & evaluates it (AUC & Accuracy)
     #TODO MAKE PLOTS
@@ -70,7 +70,7 @@ def eval_model(model, criterion, data, labels, return_curve=False):
     
     else:return eval_loss.item(), acc, AUC, f1
 
-def test_eval(model_dict, keys, criterion, data_dict, labels_dict, return_curve=False):
+def test_eval(model_dict, data_dict, labels_dict, keys=range(12,17), criterion=nn.CrossEntropyLoss(),  return_curve=False):
     """
     takes a model_dict and evaluates each model on the corresponding data
     """
@@ -81,14 +81,12 @@ def test_eval(model_dict, keys, criterion, data_dict, labels_dict, return_curve=
     curve_dict = {}
     for index, ll in enumerate(keys):
         if return_curve :
-            loss, acc, auc, f1, curve = eval_model(model_dict[ll], criterion, 
-                                                   data_dict[ll], labels_dict[ll],
-                                                  return_curve = True)
+            loss, acc, auc, f1, curve = eval_model(model_dict[ll], data_dict[ll], labels_dict[ll],
+                                                   criterion, return_curve = True)
             curve_dict[ll] = (auc, curve)
         elif return_curve == False:
-            loss, acc, auc, f1 = eval_model(model_dict[ll], criterion, 
-                                            data_dict[ll], labels_dict[ll],
-                                            return_curve = False)
+            loss, acc, auc, f1 = eval_model(model_dict[ll], data_dict[ll], labels_dict[ll],
+                                                   criterion, return_curve = False)
         eval_loss_dict[ll] = loss
         acc_dict[ll] = acc
         AUC_dict[ll] = auc
@@ -158,7 +156,7 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
     for e in tqdm(range(nb_epochs)):
         train_loss = train_model_step(model, criterion, optimizer, train_data, train_label, mini_batch_size)
         train_losses.append(train_loss)
-        val_loss, acc, auc, f1 = eval_model(model, criterion, eval_data, eval_label, return_curve=False)
+        val_loss, acc, auc, f1 = eval_model(model, eval_data, eval_label,criterion,return_curve=False)
         val_losses.append(val_loss)
         val_accs.append(acc)
         val_aucs.append(auc)
@@ -186,11 +184,11 @@ def train_model_full(model, criterion, optimizer, nb_epochs,
     
     return train_losses, val_losses, val_accs, val_aucs, val_f1
                 
-def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,
-             mini_batch_size, data, labels, verbose=False):
+def kfold_cv(model, data, labels,  optimizer, nb_epochs, kfold,
+             mini_batch_size, criterion=nn.CrossEntropyLoss(), verbose=False):
     """Performs Kfold crossvalidation of a given model."""
     #These will be lists of lists
-    kf = KFold(n_splits=kfold, shuffle=True)
+    kf = KFold(n_splits=kfold, shuffle=True)#using sklearn's kfold split
     val_result = []
     acc_result = []
     AUC_result = []
@@ -211,7 +209,7 @@ def kfold_cv(model, criterion, optimizer, nb_epochs, kfold,
         #print("Starting training")
         for e in tqdm(range(nb_epochs)):
             train_loss = train_model_step(model, criterion, optimizer, train_data, train_labels, mini_batch_size)
-            val_loss, acc, AUC, f1 = eval_model(model, criterion, eval_data, eval_labels)
+            val_loss, acc, AUC, f1 = eval_model(model, eval_data, eval_labels, criterion)
             train_temp.append(train_loss)
             val_temp.append(val_loss)            
             acc_temp.append(acc)            

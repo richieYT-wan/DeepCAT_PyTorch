@@ -76,14 +76,23 @@ def get_losses_df(PATH, keys = [12,13,14,15,16]):
     return result
         
 
-def plot_loss(train_dict, val_dict, keys, save = 'losses.jpg', folder = None):
+def plot_loss(train_dict, val_dict, keys, kcv=False, save = 'losses.jpg', folder = None):
     num = len(keys)
     fig, axes = plt.subplots(EPOCHLAYOUT[num][0],EPOCHLAYOUT[num][1], figsize = EPOCHLAYOUT[num][2])
     if num > 1: 
         ax = axes.ravel() 
         for index, ll in enumerate(keys):
-            ax[index].plot(train_dict[ll], 'b-', lw = 0.5, label = 'Train')
-            ax[index].plot(val_dict[ll], 'r-', lw = 0.5, label = 'Validation')
+            if kcv == True : 
+                train_mean = np.mean(train_dict[ll],axis=0)
+                train_err = np.var(train_dict[ll], axis=0)
+                val_mean = np.mean(val_dict[ll],axis=0)
+                val_err = np.var(val_dict[ll], axis=0)
+                x = range(len(train_mean))      
+                ax[index].errorbar(x, train_mean, yerr=train_err,fmt= 'b-', lw = 0.5, label = 'Train', capsize=.5, capthick = .5)
+                ax[index].errorbar(x, val_mean, yerr=val_err, fmt='r-', lw = 0.5, label = 'Validation', capsize=.5, capthick = .5)
+            else:    
+                ax[index].plot(train_dict[ll], 'b-', lw = 0.5, label = 'Train')
+                ax[index].plot(val_dict[ll], 'r-', lw = 0.5, label = 'Validation')
             ax[index].legend(loc='best')
             ax[index].set_title('Train/Val Losses during training for L = {}'.format(ll))
             ax[index].set_xlabel('epoch')
@@ -150,16 +159,31 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
         return fig, axes
         
         
-def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys, 
+def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys, kcv=False,
               save = 'accs.jpg', folder = None):
     num = len(keys)
     fig, axes = plt.subplots(EPOCHLAYOUT[num][0],EPOCHLAYOUT[num][1], figsize = EPOCHLAYOUT[num][2])
     if num > 1: 
         ax = axes.ravel() 
         for index, ll in enumerate(keys):
-            ax[index].plot(accuracy_dict[ll], 'c-', lw = 0.5, label = 'Accuracy')
-            ax[index].plot(AUC_dict[ll], 'g-', lw = 0.5, label = 'AUC')
-            ax[index].plot(F1_dict[ll], 'y-', lw = 0.5, label = 'F1-score')
+            if kcv == True : 
+                acc_mean = np.mean(accuracy_dict[ll],axis=0)
+                acc_err = np.var(accuracy_dict[ll], axis=0)
+                
+                AUC_mean = np.mean(AUC_dict[ll],axis=0)
+                AUC_err = np.var(AUC_dict[ll], axis=0)
+                
+                F1_mean = np.mean(F1_dict[ll],axis=0)
+                F1_err = np.var(F1_dict[ll], axis=0)
+
+                x = range(len(acc_mean))      
+                ax[index].errorbar(x, acc_mean, yerr=acc_err,fmt= 'c-', lw = 0.5, label = 'Accuracy', capsize=.5, capthick = .5)
+                ax[index].errorbar(x, AUC_mean, yerr=AUC_err, fmt='g-', lw = 0.5, label = 'AUC', capsize=.5, capthick = .5)
+                ax[index].errorbar(x, F1_mean, yerr=F1_err, fmt='y-', lw = 0.5, label = 'F1-score', capsize=.5, capthick = .5)
+            else:   
+                ax[index].plot(accuracy_dict[ll], 'c-', lw = 0.5, label = 'Accuracy')
+                ax[index].plot(AUC_dict[ll], 'g-', lw = 0.5, label = 'AUC')
+                ax[index].plot(F1_dict[ll], 'y-', lw = 0.5, label = 'F1-score')
             
             ax[index].legend(loc='best')
             ax[index].set_title('Prediction stats during training for L = {}'.format(ll))
@@ -235,3 +259,30 @@ def plot_PPV(df, save='PPV.jpg', folder =None):
         plt.savefig(OUTPATH+save)
         
 #def plot_loss_seaborn(df)
+
+
+def plot_roc_comparison(curves_dict1, curves_dict2, name, save='roc_comparison.jpg', folder =None):
+    fig, axes = plt.subplots(2, 3, figsize=(30,20))
+    ax = axes.ravel() 
+    for index, ll in enumerate(range(12,17)):
+        pts = np.linspace(0,1, 100)
+        ax[index].plot(curves_dict1[ll][1][0], curves_dict1[ll][1][1],
+                       'm-', lw = 0.8, label = 'DeepCAT : AUC={:.4f}'.format(curves_dict1[ll][0]))
+        ax[index].plot(curves_dict2[ll][1][0], curves_dict2[ll][1][1],
+                       'c-', lw = 0.8, label = 'Richie : AUC={:.4f}'.format(curves_dict2[ll][0]))
+        ax[index].plot(pts, pts, 'k--', lw = '0.4', label = 'random')
+        ax[index].legend(loc='best')
+        ax[index].set_title('ROC_AUC on new set {} L = {}'.format(name,ll))
+        ax[index].set_xlabel('FPR')
+        ax[index].set_ylabel('TPR')
+    fig.suptitle('Comparison of ROC AUC curves on {}'.format(name), fontsize = 18, fontweight='bold')
+    fig.subplots_adjust(top=.95)
+    fig.tight_layout(rect=[0,0,1,.99])
+    fig.delaxes(ax[-1])
+        
+    if save == None:
+        return            
+    if folder is not None:
+        plt.savefig(os.path.join(folder,save), dpi=180)
+    else:
+        plt.savefig(os.path.join(os.getcwd(),save), dpi=180)
