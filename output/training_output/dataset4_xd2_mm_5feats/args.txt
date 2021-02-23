@@ -1,0 +1,18 @@
+###### ARGS::
+indir:.\training_data_new\dataset4\
+outdir:dataset4_xd2_mm_5feats
+nb_epochs:601
+lr:0.00025
+keys:[12, 13, 14, 15, 16]
+batchsize:300
+valmode:naive
+kfold:4
+ratio:0.3333333333333333
+test:True
+v:True
+metric:val
+plots:True
+arch:xd2
+enc:atchley
+scale:minmax
+crop:False

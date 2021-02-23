@@ -1,0 +1,18 @@
+###### ARGS::
+indir:.\training_data_new\training_data_filtered\
+outdir:og_dataset_cropped
+nb_epochs:601
+lr:5e-05
+keys:[12, 13, 14, 15, 16]
+batchsize:300
+valmode:naive
+kfold:4
+ratio:0.25
+test:True
+v:True
+metric:val
+plots:True
+arch:cropped_og
+enc:aa_atchley
+scale:minmax
+crop:True

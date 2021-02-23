@@ -1,0 +1,17 @@
+###### ARGS::
+indir:TrainingMCC
+outdir:MCC_curated_rmm20feats
+nb_epochs:6001
+lr:8.67e-06
+keys:[12, 13, 14, 15, 16]
+batchsize:250
+valmode:naive
+kfold:4
+ratio:0.3
+test:True
+v:True
+metric:val
+plots:True
+arch:richie
+enc:aa_atchley
+scale:minmax

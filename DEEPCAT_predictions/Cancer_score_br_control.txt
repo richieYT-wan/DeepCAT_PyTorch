@@ -1,0 +1,16 @@
+BR01N_parsed.txt	0.56767935
+BR05N_parsed.txt	0.5568028
+BR07N_parsed.txt	0.56462246
+BR13N_parsed.txt	0.58633536
+BR14N_parsed.txt	0.54461265
+BR15N_parsed.txt	0.5473673
+BR16N_parsed.txt	0.6139554
+BR17N_parsed.txt	0.6000627
+BR18N_parsed.txt	0.58035105
+BR19N_parsed.txt	0.600962
+BR20N_parsed.txt	0.61325663
+BR21N_parsed.txt	0.6082544
+BR22N_parsed.txt	0.62752736
+BR24N_parsed.txt	0.60686255
+BR25N_parsed.txt	0.5919555
+BR26N_parsed.txt	0.6222372

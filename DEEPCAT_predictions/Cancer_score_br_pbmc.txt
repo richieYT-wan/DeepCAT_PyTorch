@@ -1,0 +1,16 @@
+BR01B_parsed.txt	0.53700835
+BR05B_parsed.txt	0.54360515
+BR07B_parsed.txt	0.53639245
+BR13B_parsed.txt	0.5121586
+BR14B_parsed.txt	0.55827683
+BR15B_parsed.txt	0.5295684
+BR16B_parsed.txt	0.54890376
+BR17B_parsed.txt	0.58475274
+BR18B_parsed.txt	0.5357643
+BR19B_parsed.txt	0.53894454
+BR20B_parsed.txt	0.5521851
+BR21B_parsed.txt	0.5660718
+BR22B_parsed.txt	0.5635573
+BR24B_parsed.txt	0.56253636
+BR25B_parsed.txt	0.56562304
+BR26B_parsed.txt	0.57820493

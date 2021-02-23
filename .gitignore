@@ -7,6 +7,10 @@ NewData/ostmeyer*
 .ipynb_checkpoints
 __pycache__
 draft_notebooks/*
+notebooks/output/*
+training_data_new/new_data/*
+training_data_new/training_data_curated/*
+
 
 # Distribution / packaging
 .Python
@@ -132,3 +136,4 @@ dmypy.json
 
 figures/stuff/*
 output/test/*
+notebooks/filtered_naive_db.csv

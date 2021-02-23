@@ -56,9 +56,6 @@ def eval_model(model, data, labels, criterion=nn.CrossEntropyLoss(), return_curv
     #Logits = raw for loss, predictions = argmax(logit), probs = softmax(logit)
     with torch.no_grad():
         logits, predictions, probs = model(data) 
-        #predictions = logits.argmax(1)
-        #probs = logits.softmax(1)
-        
         eval_loss = criterion(logits, labels) #criterion = nn.CEL
         acc = accuracy_score(labels.cpu(), predictions.cpu())
         AUC = roc_auc_score(one_hot, probs.detach().cpu())
@@ -229,19 +226,19 @@ def kfold_cv(model, data, labels,  optimizer, nb_epochs, kfold,
 
     return train_result, val_result, acc_result, AUC_result, f1_result
 
-def predict_score(models, filename, device='cuda', encoding='deepcat', scaling='minmax'):
+def predict_score(models, df, save=False, threshold = 10000, device='cuda', encoding='deepcat', scaling='minmax'):
     """
-    Reads a .txt file with read_ismart, gets the corresponding dataframe containing the sequences.
+    Takes as argument a dataframe containing the sequences read from a .tsv file 
+    (typically using read_adaptive_tsv before calling predict_score)
     Then evaluate the models
     """
-    #Sets the models to eval mode & sends to device
-
-    
-    df = read_ismart(filename) #Reads the sequences and get the dataframe
+    #print(df)
     df['prob_cancer']=None #New column for predicted probability of cancer for each sequence
     for l in [12,13,14,15,16]:
-        seqs=df.query('len==@l')['aminoAcid'].values 
-        feats = get_feats_tensor(seqs, device=device, encoding=encoding, scaling ='minmax') #Gets the feature tensors 
+        #print("### L IS EQUAL TO",l)
+        seqs=df.query('len==@l')['amino_acid'].values 
+        if len(seqs)==0:continue
+        feats = get_feats_tensor(seqs, device=device, encoding=encoding, scaling =scaling) #Gets the feature tensors 
         _, _, probs = models[l](feats) #Runs the prediction
         df.loc[df['len']==l,'prob_cancer'] = probs.detach().cpu()[:,1] 
     

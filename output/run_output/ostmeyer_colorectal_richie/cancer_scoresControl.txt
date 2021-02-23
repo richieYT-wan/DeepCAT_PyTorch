@@ -1,0 +1,14 @@
+Patient10_Mucosa.tsvparsed.txt	0.4737572861923947
+Patient11_Mucosa.tsvparsed.txt	0.459220183775463
+Patient12_Mucosa.tsvparsed.txt	0.4804664424943232
+Patient13_Mucosa.tsvparsed.txt	0.4912167852910903
+Patient14_Mucosa.tsvparsed.txt	0.4726521966523594
+Patient1_Mucosa.tsvparsed.txt	0.47002231726107535
+Patient2_Mucosa.tsvparsed.txt	0.44379578597435515
+Patient3_Mucosa.tsvparsed.txt	0.487383039962586
+Patient4_Mucosa.tsvparsed.txt	0.4805836054195659
+Patient5_Mucosa.tsvparsed.txt	0.47772945746867757
+Patient6_Mucosa.tsvparsed.txt	0.47277042437757183
+Patient7_Mucosa.tsvparsed.txt	0.46589704497119055
+Patient8_Mucosa.tsvparsed.txt	0.47061171491221065
+Patient9_Mucosa.tsvparsed.txt	0.5044962461800345

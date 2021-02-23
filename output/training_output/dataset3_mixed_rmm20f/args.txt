@@ -1,0 +1,18 @@
+###### ARGS::
+indir:.\training_data_new\dataset3\
+outdir:dataset3_mixed_rmm20f
+nb_epochs:3000
+lr:9e-06
+keys:[12, 13, 14, 15, 16]
+batchsize:250
+valmode:naive
+kfold:4
+ratio:0.3333333333333333
+test:True
+v:True
+metric:val
+plots:True
+arch:richie
+enc:aa_atchley
+scale:minmax
+crop:False

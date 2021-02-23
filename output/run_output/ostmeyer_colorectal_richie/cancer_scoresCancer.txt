@@ -1,0 +1,14 @@
+Patient10_Tumor.tsvparsed.txt	0.46236298788932767
+Patient11_Tumor.tsvparsed.txt	0.4845884722173275
+Patient12_Tumor.tsvparsed.txt	0.5033013454334183
+Patient13_Tumor.tsvparsed.txt	0.5536901888558153
+Patient14_Tumor.tsvparsed.txt	0.5081443150102696
+Patient1_Tumor.tsvparsed.txt	0.46260003551467427
+Patient2_Tumor.tsvparsed.txt	0.47784203526802427
+Patient3_Tumor.tsvparsed.txt	0.4882422162756431
+Patient4_Tumor.tsvparsed.txt	0.4629403739672366
+Patient5_Tumor.tsvparsed.txt	0.4849764303020809
+Patient6_Tumor.tsvparsed.txt	0.42467340640723705
+Patient7_Tumor.tsvparsed.txt	0.4854879744104862
+Patient8_Tumor.tsvparsed.txt	0.48096069930693075
+Patient9_Tumor.tsvparsed.txt	0.5115422658675675

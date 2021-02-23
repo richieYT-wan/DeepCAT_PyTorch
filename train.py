@@ -32,20 +32,20 @@ def args_parser():
     parser.add_argument('-indir', type = str, default = './TrainingData/', help = 'relative path to input directory containing the tumor/normal, train&test CDR3 sequences. Format should be .txt, with no header. By default, it is ./TrainingData/, assuming train.py is located in the root of the github folder (./DeepTCR_PyTorch/TrainingData/ with ./DeepTCR_PyTorch/train.py.')
     parser.add_argument('-outdir', type = str, default= 'training_output/', help = 'Relative path to the output directory where the best weights as well as figures, training losses/accuracies etc. are logged. By default, if it does not exist, a folder called "training_output" is created in the ./output/ directory.')
     parser.add_argument('-nb_epochs', type=int, default = 300, help = 'Number of epochs over which the model is trained.')
-    parser.add_argument('-lr', type = float, default = 0.00125, help= 'Learning rate, 0.00125 by default')
+    parser.add_argument('-lr', type = float, default = 6.67e-5, help= 'Learning rate, 0.00125 by default')
     parser.add_argument('-keys', nargs = "+", default = [12,13,14,15,16], help = 'A list of the models (lengths) to train (corresponds to the sequence length). By default, all models (len = 12 to 16) are trained. If a single model is needed, please input a list. ex : [12] to only train model 12')
     parser.add_argument('-batchsize', type=int, default=250, help ='Mini-batch size for training. By default, 250')
     parser.add_argument('-valmode', type= str, default='naive', help = 'Validation mode. By default, it is a "naïve" split of the training set with 0.67 as training, 0.33 as validation. Value should only be NAIVE or KCV. (not case sensitive)')
-    parser.add_argument('-kfold', type = int, default = 5, help = 'If --valmode = KCV, then --kfold specifies K, i.e. the number of folds to crossvalidate over.')
+    parser.add_argument('-kfold', type = int, default = 4, help = 'If --valmode = KCV, then --kfold specifies K, i.e. the number of folds to crossvalidate over.')
     parser.add_argument('-ratio', type=float, default=1/3, help='the proportion of data used as validation set. By default, it is 0.33')
     parser.add_argument('-test', type=str_to_bool, default = False, help='Whether to include a test set to compute evaluation of the best model obtained during training. If False, the validation set will be used to compute the final evaluation. If val-mode is KCV, then --test should be True!!')
     parser.add_argument('-v', type=str_to_bool, default=True, help="Whether to print progress. (True/False), True by default")
     parser.add_argument('-metric', default="val", help = 'Which metric to use to log the best weights. Takes values in [val, acc, auc, f1]. By default, it is val.')
     parser.add_argument('-plots', type=str_to_bool, default = False, help = 'Whether to save the training stats as plots. False by default.')
-    parser.add_argument('-arch', type = str, default ='deepcat', help = 'Which architecture to use (deepcat by default)')
-    parser.add_argument('-enc', type = str, default = 'aaidx', help = 'Which AA encoding to use. Can be aaidx or aa_atchley. By default, it is aaidx. CHECK THAT ENCODING IS COMPATIBLE WITH THE ARCH YOU WANT TO USE!')
+    parser.add_argument('-arch', type = str, default ='richie', help = 'Which architecture to use (deepcat by default)')
+    parser.add_argument('-enc', type = str, default = 'aa_atchley', help = 'Which AA encoding to use. Can be aaidx or aa_atchley. By default, it is aaidx. CHECK THAT ENCODING IS COMPATIBLE WITH THE ARCH YOU WANT TO USE!')
     parser.add_argument('-scale', type = str, default='minmax', help = 'Scaling of the features. By default, features are scaled to minmax(-1,1)')
-
+    parser.add_argument('-crop', type=str_to_bool, default = False, help = 'cropped seqs')
     return parser.parse_args()
 
 def main():
@@ -71,11 +71,12 @@ def main():
     arch = args.arch.lower()
     encoding = args.enc.lower()
     sc = args.scale.lower()
+    cr = args.crop
     #returns dictionaries!! e.g. train_feats[12] returns the feats for L=12
     if args.test==True:
-        train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc) 
+        train_feats, train_labels, test_feats, test_labels = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc, crop=cr) 
     elif args.test==False:
-        train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc) 
+        train_feats, train_labels, _, _ = get_train_test_data(TRAINDIR, KEYS, device=None, shuffle=True, encoding = encoding, scaling=sc, crop=cr) 
     #Set device to None. We don't want to send every tensor to 'cuda' as it will run out of memory. 
     #Instead, the tensors should be sent to Cuda only when needed.
     #Ex when L = 12, all the L = 12 tensors are sent to cuda, the rest stay on 'cpu'.
@@ -200,11 +201,15 @@ def main():
         if not os.path.exists(FOLDER):
             os.makedirs(FOLDER, exist_ok = True) 
         #TODO : args.valmode = 'naive' or 'KCV' must implement plotting for KCV
-        plot_loss(train_loss_dict, val_loss_dict, KEYS,kcv=crossvalidate,  folder=FOLDER)
-        plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, KEYS, kcv=crossvalidate, folder = FOLDER)
+        if naive == True:
+            plot_loss(train_loss_dict, val_loss_dict, kcv=False,  folder=FOLDER)
+            plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, kcv=False, folder = FOLDER)
+        if crossvalidate==True:
+            plot_loss(train_loss_dict, val_loss_dict, kcv=True,  folder=FOLDER)
+            plot_accs(val_accs_dict, val_aucs_dict, val_f1_dict, kcv=True, folder = FOLDER)
         
         if args.test == True:
-            plot_roc_curve(test_curves, KEYS, save = 'testset_roc_curves.jpg', folder = FOLDER)
+            plot_roc_curve(test_curves, save = 'testset_roc_curves.jpg', folder = FOLDER)
             plot_PPV(preds_df, save = 'testset_PPV_curves.jpg', folder = FOLDER)
         
     end_time = dt.now()       

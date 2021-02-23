@@ -19,7 +19,8 @@ if 'notebook' in PATH:
         minmax_aaidx = pickle.load(h)
     with open('../src/minmax_merged.pkl','rb') as i:
         minmax_merged = pickle.load(i)
-
+    with open('../src/minmax_atchley.pkl','rb') as j:
+        minmax_atchley = pickle.load(j)
 else :
     with open('./src/AAidx_dict.pkl', 'rb') as f: 
         AAidx_Dict = pickle.load(f) 
@@ -29,7 +30,8 @@ else :
         minmax_aaidx = pickle.load(h)
     with open('./src/minmax_merged.pkl','rb') as i:
         minmax_merged = pickle.load(i)
-
+    with open('./src/minmax_atchley.pkl','rb') as j:
+        minmax_atchley = pickle.load(j)
 
 def one_hot_labels(target):
     tmp = target.new_zeros(target.size(0), target.max() + 1)
@@ -75,12 +77,12 @@ def read_seq(filename):
     with open(filename, 'r') as f:
         for line in f.readlines():
             seq = line.strip()
-            if not seq.startswith('C') or not seq.endswith('F'):continue
+            #if not seq.startswith('C') or not seq.endswith('F'):continue
             data.append(seq)
     return np.array(data)
 
 
-def aaindex_encoding(seq, device, scaling ='minmax'):
+def aaindex_encoding(seq, device=None, scaling ='minmax'):
     """Encodes the AA indices to a given sequence"""
     n_aa = len(seq)
     temp = np.zeros([n_aa, 15], dtype=np.float32)
@@ -114,8 +116,23 @@ def aaidx_atchley_encoding(seq, device=None, scaling ='minmax'):
         aa_encoding = aa_encoding.to(device)
     return aa_encoding
 
+def atchley_encoding(seq, device=None, scaling='minmax'):
+    """Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
+    n_aa = len(seq)
+    temp = np.zeros([n_aa, 5], dtype=np.float32)
+    for idx in range(n_aa):
+        aa = seq[idx]
+        temp[idx]=minmax_atchley[aa]
+    temp = np.transpose(temp)
+    aa_encoding = torch.from_numpy(temp)
+    aa_encoding = aa_encoding.unsqueeze(0)
+    if device == torch.device('cuda'):
+        aa_encoding = aa_encoding.to(device)
+    return aa_encoding
+
 def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,17), 
-                             device=None, shuffle=True, encoding = 'aaidx', scaling='minmax'):
+                             device=None, shuffle=True, encoding = 'aaidx',
+                             scaling='minmax', crop = False):
     """For each CDR3 dataset (tumor and normal) sequences, get the feature vectors and labels"""
     
     #Normally, sequences are extracted as lists, but maybe I can modify something in read_sequences to return array instead of list
@@ -138,18 +155,28 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
         data = []
         for seqs in tumor_sequences[mask_tumor]:
             if len(PAT.findall(seqs))>0:continue #Skipping a sequence if it matches an unwanted CDR3 pattern 
+            if crop == True:
+                seqs= seqs[3:-3]
             if encoding == 'aaidx': 
                 data.append(aaindex_encoding(seqs, device, scaling))
             elif encoding == 'aa_atchley':
                 data.append(aaidx_atchley_encoding(seqs, device, scaling))
+            elif encoding == 'atchley':   
+                data.append(atchley_encoding(seqs, device, scaling))
+                        
         nb_tumors = len(data)
 
         for seqs in normal_sequences[mask_normal]:
             if len(PAT.findall(seqs))>0:continue #Skipping a sequence if it matches an unwanted CDR3 pattern 
+            if crop == True:
+                seqs= seqs[3:-3]
             if encoding == 'aaidx': 
                 data.append(aaindex_encoding(seqs, device, scaling))
             elif encoding == 'aa_atchley':
                 data.append(aaidx_atchley_encoding(seqs, device, scaling))
+            elif encoding == 'atchley':
+                data.append(atchley_encoding(seqs, device, scaling))
+                
         nb_normal = len(data[nb_tumors:])
         #Getting the labels 
         labels = torch.tensor(([1]*nb_tumors+[0]*nb_normal), dtype=torch.int64)
@@ -162,8 +189,6 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
         #Sends to cuda. Shouldn't do this in batch-train because every tensors will be on GPU
         #leading to out of memory issues
         if device == torch.device('cuda'):
-            #print(data.device)
-            #data = data.to(device)
             labels = labels.to(device)
 
         feature_dict[length] = data
@@ -175,7 +200,7 @@ def generate_features_labels(tumor_sequences, normal_sequences, keys = range(12,
     return feature_dict, label_dict
 
 def get_train_test_data(directory, keys, device=None, shuffle = True, 
-                        encoding = 'aaidx', scaling ='minmax'):
+                        encoding = 'aaidx', scaling ='minmax', crop = False):
     """
     From a directory, reads the .txt and generates the corresponding train/test tumor-normal data (features+label). Assumes the files are named as 'NormalCDR3.txt', 'NormalCDR3_test.txt', 'TumorCDR3.txt', 'TumorCDR3_test.txt'
     """
@@ -188,22 +213,76 @@ def get_train_test_data(directory, keys, device=None, shuffle = True,
         if '.txt' not in lower:continue #Skips non .txt files
         if 'cdr3' not in lower:continue #Skips files without CDR3 in the name
         if 'test' in lower:
+            print("Reading : ", f)
             if 'tumor' in lower:
                 test_tumor = read_seq(directory+f)
             elif 'normal' in lower:
                 test_normal = read_seq(directory+f)
         else:# 'test' not in lower:
+            print("Reading : ", f)
             if 'tumor' in lower:
                 train_tumor = read_seq(directory+f)
             elif 'normal' in lower:
                 train_normal = read_seq(directory+f)
     print("\nTrain")
-    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle, encoding, scaling)
+    train_feats_dict, train_labels_dict = generate_features_labels(train_tumor, train_normal, keys, device, shuffle, encoding, scaling, crop)
     print("\nTest")
-    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle, encoding, scaling)
+    test_feats_dict, test_labels_dict = generate_features_labels(test_tumor, test_normal, keys, device, shuffle, encoding, scaling, crop)
     
     return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
-            
+
+
+FIELDS = ['amino_acid', 'v_gene', 'frequency']
+
+def read_adaptive_tsv(tsv_file, save=False, threshold=10000):
+    """
+    Reads a raw .tsv containing information related to TCR sequences
+    Cleans them and retain the following informations : 
+        columns : amino_acids, v_gene (vMaxResolved), frequency (frequencyCount (%))
+        rows : only rows that have 
+                - defined sequences (doesn't contain X or *)
+                - sequence length >=10 <=24
+                - sequence starts with C and ends with F
+                - does not contain "unresolved" in vMaxResolved
+    """
+    try:
+        tmp = pd.read_csv(tsv_file, sep='\t',usecols=FIELDS)[FIELDS] #read only used columns
+    except ValueError:
+        print("Couldn't read {file}, please check that the columns header contains {FIELD}".format(file=tsv_file,FIELD=FIELDS))
+        return
+
+    print("Currently reading : ", tsv_file, end='\r')
+    tmp=tmp.query('v_gene!="unresolved"') #dropping unresolved
+    tmp = tmp.dropna(subset=['amino_acid'])
+    #print("\n\n\n######################",tmp,"\n\n\n#######################")
+    tmp['len'] = tmp.apply(lambda x: len(x['amino_acid']),axis=1).copy() #Getting the length of a sequence
+    #Check if length motifs within [10,24]
+    len_mask = (tmp['len'] >= 10) & (tmp['len'] <= 24)
+    
+    #Check if starts with C and ends with F
+    motif_mask = tmp['amino_acid'].str.startswith('C', na=False) &\
+                 tmp['amino_acid'].str.endswith('F', na=False) 
+    
+    #Check if sequence contains any these patterns
+    patterns = '|'.join(['\*','X'])
+    contains_mask = ~(tmp['amino_acid'].str.contains(patterns, na= False))
+    #Combined the 3 masks
+    mask = len_mask & motif_mask & contains_mask 
+    tmp = tmp[mask].sort_values('frequency', ascending=False)
+    
+    save_filename = tsv_file.split('.tsv')[0]+'_parsed.txt'
+    if threshold is None:
+        if save==True:
+            tmp.to_csv(save_filename, sep='\t', index = False)
+            print("File saved under ",save_filename, end='\r')
+        return tmp
+    else:
+        tmp=tmp.iloc[:threshold] 
+        if save==True:
+            tmp.to_csv(save_filename, sep='\t', index = False)
+            print("File saved under ",save_filename, end='\r')
+        return tmp
+    
 def read_ismart(filename):
     """
     Reads a .txt file, assumes that it is in the format outputed by iSMARTm.py

@@ -76,7 +76,8 @@ def get_losses_df(PATH, keys = [12,13,14,15,16]):
     return result
         
 
-def plot_loss(train_dict, val_dict, keys, kcv=False, save = 'losses.jpg', folder = None):
+def plot_loss(train_dict, val_dict, kcv=False, save = 'losses.jpg', folder = None):
+    keys = train_dict.keys()
     num = len(keys)
     fig, axes = plt.subplots(EPOCHLAYOUT[num][0],EPOCHLAYOUT[num][1], figsize = EPOCHLAYOUT[num][2])
     if num > 1: 
@@ -119,7 +120,8 @@ def plot_loss(train_dict, val_dict, keys, kcv=False, save = 'losses.jpg', folder
         return fig, axes
 
 
-def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
+def plot_roc_curve(curve_dict, save = 'roc_curves.jpg', folder=None):
+    keys = curve_dict.keys()
     num = len(keys)
     fig, axes = plt.subplots(SQRLAYOUT[num][0],SQRLAYOUT[num][1], figsize = SQRLAYOUT[num][2])
     if num > 1: 
@@ -159,8 +161,9 @@ def plot_roc_curve(curve_dict, keys, save = 'roc_curves.jpg', folder=None):
         return fig, axes
         
         
-def plot_accs(accuracy_dict, AUC_dict, F1_dict, keys, kcv=False,
-              save = 'accs.jpg', folder = None):
+def plot_accs(accuracy_dict, AUC_dict, F1_dict, 
+              kcv=False, save = 'accs.jpg', folder = None):
+    keys = AUC_dict.keys()
     num = len(keys)
     fig, axes = plt.subplots(EPOCHLAYOUT[num][0],EPOCHLAYOUT[num][1], figsize = EPOCHLAYOUT[num][2])
     if num > 1: 
@@ -286,3 +289,37 @@ def plot_roc_comparison(curves_dict1, curves_dict2, name, save='roc_comparison.j
         plt.savefig(os.path.join(folder,save), dpi=180)
     else:
         plt.savefig(os.path.join(os.getcwd(),save), dpi=180)
+        
+from statsmodels.stats.weightstats import ttest_ind
+
+def boxplot_cs(total_df, pv=False):
+    uniques=total_df['data'].unique()
+    n = len(uniques)
+    fig, axes = plt.subplots(n,1, figsize=(15,8*n))
+    
+    for index, a in enumerate(axes.ravel()):
+        #Getting dataset subgraph
+        x = uniques[index]
+        data = total_df.query('data==@x')
+        #Getting colorpalette
+        n_hues = len(data.type.unique())
+        sns.set_palette('coolwarm', n_colors =n_hues)
+
+        sns.boxplot(data=data, x='model', hue='type', y = 'cancer_score', ax = a)
+        sns.swarmplot(data=data, x='model', hue='type', y = 'cancer_score', ax = a, edgecolor='black', linewidth=0.5)
+        a.set_title('Comparison of predicted patient cancer scores for data = {} \nusing DeepCAT re-trained model'\
+                    ' vs PyTorch (Richie) implementation'.format(x))
+        if pv ==True:
+            pvals = []
+            top = data.cancer_score.max()
+            a.set_ylim(data.cancer_score.min()-0.01, top+0.02)
+            print('Here PVAL')
+            y1, y2, y3 = top+0.005, top+0.01, top+0.015
+            #Getting models and plotting
+            n_models = data.model.unique()
+            for i, mod in enumerate(n_models):
+                pval = ttest_ind(data.query('model==@mod&type=="control"')['cancer_score'],
+                                 data.query('model==@mod&type=="cancer"')['cancer_score'])
+                a.plot([i-0.2, i-0.2, i+0.2, i+0.2], [y1, y2, y2, y1], lw=1.5, c='k')
+                a.text(i, y3, "p = {pv:.3e}".format(pv=pval[1]),
+                       ha='center', va='center', color='k')
