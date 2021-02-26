@@ -1,0 +1,11 @@
+###### ARGS::
+indir:.\test_data\KLL\
+outdir:MCC_kll_redo_ismart
+weightdir:.\output\training_output\richie_minmax_redo_withnograd\
+v:True
+arch:richie
+enc:aa_atchley
+scale:minmax
+thr:10000
+save:True
+ismart:True

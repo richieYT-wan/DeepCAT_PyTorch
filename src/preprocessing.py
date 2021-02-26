@@ -3,6 +3,8 @@ import torch
 import numpy as np
 import sys,os,re,csv,pathlib, math 
 import pandas as pd 
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
 AAs = np.array(list('WFGAVILMPYSTNQCKRHDE')) #Constant list of amino acids
 PAT = re.compile('[\\*_XB]')  ## non-productive CDR3 patterns
@@ -83,7 +85,7 @@ def read_seq(filename):
 
 
 def aaindex_encoding(seq, device=None, scaling ='minmax'):
-    """Encodes the AA indices to a given sequence"""
+    """Reads a string (seq), Encodes the AA indices to a given sequence"""
     n_aa = len(seq)
     temp = np.zeros([n_aa, 15], dtype=np.float32)
     for idx in range(n_aa):
@@ -100,7 +102,7 @@ def aaindex_encoding(seq, device=None, scaling ='minmax'):
     return aa_encoding
 
 def aaidx_atchley_encoding(seq, device=None, scaling ='minmax'):
-    """Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
+    """Reads a string (seq), Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
     n_aa = len(seq)
     temp = np.zeros([n_aa, 20], dtype=np.float32)
     for idx in range(n_aa):
@@ -117,7 +119,7 @@ def aaidx_atchley_encoding(seq, device=None, scaling ='minmax'):
     return aa_encoding
 
 def atchley_encoding(seq, device=None, scaling='minmax'):
-    """Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
+    """Reads a string (seq), Encodes the AA indices to a given sequence with atchley+aaidxPCA factors merged"""
     n_aa = len(seq)
     temp = np.zeros([n_aa, 5], dtype=np.float32)
     for idx in range(n_aa):
@@ -232,9 +234,8 @@ def get_train_test_data(directory, keys, device=None, shuffle = True,
     return train_feats_dict, train_labels_dict, test_feats_dict, test_labels_dict
 
 
-FIELDS = ['amino_acid', 'v_gene', 'frequency']
 
-def read_adaptive_tsv(tsv_file, save=False, threshold=10000):
+def read_adaptive_tsv(tsv_file, save=False, threshold=10000, savedir=None):
     """
     Reads a raw .tsv containing information related to TCR sequences
     Cleans them and retain the following informations : 
@@ -245,11 +246,20 @@ def read_adaptive_tsv(tsv_file, save=False, threshold=10000):
                 - sequence starts with C and ends with F
                 - does not contain "unresolved" in vMaxResolved
     """
+    no_resolve = False
     try:
-        tmp = pd.read_csv(tsv_file, sep='\t',usecols=FIELDS)[FIELDS] #read only used columns
+        FIELDS = ['amino_acid', 'v_gene','v_resolved', 'frequency']
+        DTYPES={'amino_acid':str, 'v_gene' :str, 'v_resolved':str, 'frequency':float}
+        tmp = pd.read_csv(tsv_file, sep='\t',usecols=FIELDS, dtype=DTYPES)[FIELDS] #read only used columns
     except ValueError:
-        print("Couldn't read {file}, please check that the columns header contains {FIELD}".format(file=tsv_file,FIELD=FIELDS))
-        return
+        try:
+            FIELDS = ['amino_acid', 'v_gene', 'frequency']
+            DTYPES={'amino_acid':str, 'v_gene' :str, 'frequency':float}
+            tmp = pd.read_csv(tsv_file, sep='\t',usecols=FIELDS, dtype=DTYPES)[FIELDS] #read only used columns
+            no_resolve = True
+        except:
+            print("Couldn't read {file}, please check that the columns header contains {FIELD}".format(file=tsv_file,FIELD=FIELDS))
+            return
 
     print("Currently reading : ", tsv_file, end='\r')
     tmp=tmp.query('v_gene!="unresolved"') #dropping unresolved
@@ -269,19 +279,26 @@ def read_adaptive_tsv(tsv_file, save=False, threshold=10000):
     #Combined the 3 masks
     mask = len_mask & motif_mask & contains_mask 
     tmp = tmp[mask].sort_values('frequency', ascending=False)
-    
-    save_filename = tsv_file.split('.tsv')[0]+'_parsed.txt'
+
     if threshold is None:
-        if save==True:
+        if save==True:    
+            save_filename = tsv_file.split('.tsv')[0]+'_parsed.txt'
+            save_filename = os.path.join(savedir, save_filename)
             tmp.to_csv(save_filename, sep='\t', index = False)
             print("File saved under ",save_filename, end='\r')
-        return tmp
+
     else:
         tmp=tmp.iloc[:threshold] 
         if save==True:
+            save_filename = tsv_file.split('.tsv')[0]+'_parsed.txt'
+            save_filename = os.path.join(savedir, os.path.basename(save_filename))
             tmp.to_csv(save_filename, sep='\t', index = False)
             print("File saved under ",save_filename, end='\r')
-        return tmp
+            
+        if no_resolve==True:
+            return tmp[['amino_acid','v_gene','frequency']]
+        else : 
+            return tmp[['amino_acid','v_resolved','frequency']]
     
 def read_ismart(filename):
     """
@@ -305,5 +322,8 @@ def get_feats_tensor(sequences, device, encoding='aaidx', scaling = 'minmax'):
             feats.append(aaindex_encoding(seq, device, scaling))
         elif encoding == 'aa_atchley':
             feats.append(aaidx_atchley_encoding(seq, device, scaling))
+        elif encoding == 'atchley':
+            feats.append(atchley_encoding(seq,device,scaling))
+
     feats = torch.stack(feats).to(device)
     return feats

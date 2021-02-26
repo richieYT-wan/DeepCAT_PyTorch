@@ -150,6 +150,9 @@ def plot_roc_curve(curve_dict, save = 'roc_curves.jpg', folder=None):
         axes.set_xlabel('FPR')
         axes.set_ylabel('TPR')
     
+    fig.suptitle('ROC AUC curve for each model on test set:', fontsize = 18, fontweight='bold')
+    fig.subplots_adjust(top=.95)
+    fig.tight_layout(rect=[0,0,1,.99])
     if save == None:
         return fig, axes
     if folder is not None:
@@ -204,7 +207,11 @@ def plot_accs(accuracy_dict, AUC_dict, F1_dict,
         axes.set_title('Prediction stats during training for L = {}'.format(ll),fontweight='bold')
         axes.set_xlabel('epoch')
         axes.set_ylabel('%')
-    
+            
+    fig.suptitle('Prediction stats for each model during training:', fontsize = 18, fontweight='bold')
+    fig.subplots_adjust(top=.95)
+    fig.tight_layout(rect=[0,0,1,.99])
+
     if save == None:
         return            
     if folder is not None:
@@ -253,7 +260,11 @@ def plot_PPV(df, save='PPV.jpg', folder =None):
                             ', total {} samples (pos+neg)'.format(sl, SAMPLES_[sl]), weight='bold')
         axes.set_ylabel('PPV')
         axes.set_xlabel('Number of predictions (logscale)')
-    
+        
+    fig.suptitle('PPV for each model on test set:', fontsize = 18, fontweight='bold')
+    fig.subplots_adjust(top=.95)
+    fig.tight_layout(rect=[0,0,1,.99])
+
     if save == None:
         return            
     if folder is not None:

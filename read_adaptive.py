@@ -7,6 +7,8 @@ import sys
 import pandas as pd
 import argparse
 from src.preprocessing import *
+from src.ismart import * 
+from datetime import datetime as dt 
 
 def args_parser():
     parser = argparse.ArgumentParser(description='processes folders with subfolders containing .tsv files so that DeepCAT garbage program can read it')
@@ -15,6 +17,7 @@ def args_parser():
     return parser.parse_args()
 
 def main():
+    start_time = dt.now()
     #Getting input dir
     args = args_parser()
     input_directory = args.indir
@@ -40,12 +43,16 @@ def main():
         files = [os.path.join(subfolderpath,x) for x in os.listdir(subfolderpath) if x.endswith('.tsv')]
         scores = []
         #Iterating over each file and getting the scores for each file
-        for filename in files:
-            fn=os.path.basename(filename)
-            df = read_adaptive_tsv(filename, save=False, threshold = args.thr)[['amino_acid']]    
-            df.rename(columns = {'amino_acid':'aminoAcid'}, inplace=True)
-            #print(df)
-            df.to_csv(os.path.join(save_dir,fn.split('.tsv')[0]+'_parsed.txt'),
-                header=True, index=False)
+    for filename in files:
+        fn=os.path.basename(filename)
+        df = read_adaptive_tsv(filename, save=False, threshold = args.thr)
+        df = ismart(df, save = False)   
+        df.rename(columns = {'amino_acid':'aminoAcid'}, inplace=True)
+        df.to_csv(os.path.join(save_dir,fn.split('.tsv')[0]+'_parsed_clusteredCDR3.txt'),
+            sep = '\t', header=True, index=False)
+    end_time = dt.now()       
+    elapsed = divmod((end_time-start_time).total_seconds(), 60)
+    print("\nTime elapsed:\n\t{} minutes\n\t{} seconds".format(elapsed[0], elapsed[1]))
+
 if __name__ == '__main__':
     main()

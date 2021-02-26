@@ -1,0 +1,18 @@
+###### ARGS::
+indir:.\training_data_new\dataset4\
+outdir:dataset4_rmm20_redo
+nb_epochs:601
+lr:5.67e-05
+keys:[12, 13, 14, 15, 16]
+batchsize:500
+valmode:naive
+kfold:4
+ratio:0.3333333333333333
+test:True
+v:True
+metric:val
+plots:True
+arch:richie
+enc:aa_atchley
+scale:minmax
+crop:False

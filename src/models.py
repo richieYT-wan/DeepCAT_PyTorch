@@ -269,7 +269,7 @@ class xd2(torch.nn.Module):
         if seq_len >= 14 :
             self.fc1 = nn.Sequential(nn.Linear(16*(seq_len-6), 96),
                                      nn.BatchNorm1d(96),
-                                     F.relu(),
+                                     nn.relu(),
                                      nn.Linear(96,50))
         else :
             self.fc1 = nn.Linear(16*(seq_len-6), 50)

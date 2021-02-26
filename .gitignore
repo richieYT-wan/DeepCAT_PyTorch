@@ -10,7 +10,8 @@ draft_notebooks/*
 notebooks/output/*
 training_data_new/new_data/*
 training_data_new/training_data_curated/*
-
+*parsed/
+*test_data/
 
 # Distribution / packaging
 .Python
