@@ -25,7 +25,7 @@ from src.plots import *
 
 import argparse
 from src.torch_util import str_to_bool
-from datetime import datetime as dt 
+from datetime import datetime as dt
 
 def args_parser():
     parser = argparse.ArgumentParser(description='Trains the model. Can use naïve splitting or K-fold crossvalidation.')

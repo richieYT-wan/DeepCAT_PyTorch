@@ -138,3 +138,16 @@ dmypy.json
 figures/stuff/*
 output/test/*
 notebooks/filtered_naive_db.csv
+training_data_new/emerson_raw/batch1/emerson_batch1_626hla_parsed_tagged.tsv
+training_data_new/emerson_raw/batch1/emerson_batch1_sampletags.tsv
+training_data_new/emerson_raw/batch1/emerson_batch1_test.tsv
+training_data_new/emerson_raw/batch1/emerson_batch1_test_top10k_hla.tsv
+training_data_new/emerson_raw/batch1/emerson_batch1_train.tsv
+training_data_new/emerson_raw/batch1/emerson_batch1_train_top10k_hla.tsv
+training_data_new/emerson_raw/batch2/emerson_batch2_filtered_length_vdj.tsv
+training_data_new/emerson_raw/batch2/emerson_clean_batch2_120samples_vdj.tsv
+training_data_new/subsampled/naive_subsampled.tsv
+training_data_new/subsampled/olga_subsampled_filtered.tsv
+notebooks/_Old/naive_subsampled.tsv
+notebooks/_Old/filtered_naive_db.csv
+training_data_new/naive_filtered_db_TRB.csv
